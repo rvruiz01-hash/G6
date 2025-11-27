@@ -1,0 +1,10 @@
+// este comando es para importar las colonias ya que son muchas
+php -d max_execution_time=600 -d memory_limit=512M artisan sepomex:import storage/sepomex/CPdescarga_UTF8.txt
+
+// para la validacion del correo que no sea un correo temporal 
+composer require propaganistas/laravel-disposable-email
+
+// para que jale el pdf de el cotizador 
+composer require barryvdh/laravel-dompdf
+
+php artisan vendor:publish --provider="Barryvdh\DomPDF\ServiceProvider"

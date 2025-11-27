@@ -1,0 +1,18 @@
+/my-app
+ ├── public/
+ ├── src/
+ │   ├── assets/           # Imágenes, fuentes, archivos estáticos
+ │   ├── components/       # Componentes UI reutilizables
+ │   ├── pages/            # Componentes específicos de cada ruta (Home, Login, etc.)
+ │   ├── layouts/          # Layouts como Header, Footer
+ │   ├── features/         # Lógica por funcionalidad (auth, dashboard...)
+ │   ├── hooks/            # Hooks personalizados
+ │   ├── services/         # Llamadas a APIs, servicios
+ │   ├── context/          # Providers de React Context
+ │   ├── utils/            # Helpers y funciones puras
+ │   ├── styles/           # Estilos globales o temas
+ │   ├── router.tsx        # Configuración de rutas
+ │   ├── App.tsx           # Componente raíz
+ │   └── index.tsx         # Entry point
+ ├── package.json
+ └── README.md

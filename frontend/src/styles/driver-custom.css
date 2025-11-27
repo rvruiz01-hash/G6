@@ -1,0 +1,373 @@
+/* src/styles/driver-custom.css */
+/* ============================================ */
+/* PERSONALIZACIÓN DEL POPOVER */
+/* ============================================ */
+
+.driver-popover-custom {
+  background-color: #ffffff;
+  color: #1f2937;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 420px;
+  padding: 20px;
+  z-index: 10001 !important;
+}
+
+/* Dark mode support */
+.dark .driver-popover-custom {
+  background-color: #1f2937;
+  color: #f3f4f6;
+  border: 1px solid #374151;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4),
+    0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================ */
+/* TÍTULO */
+/* ============================================ */
+
+.driver-popover-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.dark .driver-popover-title {
+  color: #f3f4f6;
+}
+
+/* ============================================ */
+/* DESCRIPCIÓN */
+/* ============================================ */
+
+.driver-popover-description {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.dark .driver-popover-description {
+  color: #d1d5db;
+}
+
+/* ============================================ */
+/* FOOTER (Botones y Progress) */
+/* ============================================ */
+
+.driver-popover-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .driver-popover-footer {
+  border-top-color: #374151;
+}
+
+/* ============================================ */
+/* BOTONES */
+/* ============================================ */
+
+.driver-popover-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+/* Botón Siguiente */
+/* .driver-popover-next-btn {
+  background-color: #6bf280;
+  color: #6bf280;
+} */
+
+/* .driver-popover-next-btn:hover {
+  background-color: #6bf280;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+} */
+
+.dark .driver-popover-next-btn {
+  background-color: #D4AF37;
+  color: #000000;
+}
+
+.dark .driver-popover-next-btn:hover {
+  background-color: #ffffff;
+  color: #D4AF37;
+}
+
+/* Botón Atrás */
+/*.driver-popover-prev-btn {
+  background-color: #f3f4f6;
+  color: #6bf280;
+}
+
+.driver-popover-prev-btn:hover {
+  background-color: #e5e7eb;
+  color: #6bf280;
+}*/
+
+.dark .driver-popover-prev-btn {
+  background-color: #D4AF37;
+  color: #000000;
+}
+
+.dark .driver-popover-prev-btn:hover {
+  background-color: #ffffff;
+  color: #D4AF37;
+}
+
+/* Botón Cerrar/Saltar */
+/*.driver-popover-close-btn {
+  color: #f80000;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.driver-popover-close-btn:hover {
+  color: #1f2937;
+  background-color: #f3f4f6;
+}*/
+
+.dark .driver-popover-close-btn {
+  color: #D4AF37;
+}
+
+.dark .driver-popover-close-btn:hover {
+  color: #D4AF37;
+  background-color: #ffffff;
+}
+
+/* ============================================ */
+/* PROGRESS TEXT */
+/* ============================================ */
+
+.driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dark .driver-popover-progress-text {
+  color: #9ca3af;
+}
+
+/* ============================================ */
+/* OVERLAY */
+/* ============================================ */
+
+/*.driver-overlay {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(2px);
+  z-index: 9998 !important;
+}
+
+.dark .driver-overlay {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+}*/
+
+/* ============================================ */
+/* ELEMENTO DESTACADO - VERSIÓN CORREGIDA */
+/* ============================================ */
+
+.driver-active-element {
+  /* Borde brillante */
+  outline: 4px solid #3b82f6 !important;
+  outline-offset: 4px;
+
+  /* Bordes redondeados */
+  border-radius: 12px !important;
+
+  /* Fondo blanco */
+  background-color: #ffffff !important;
+
+  /* Z-index alto */
+  position: relative !important;
+  z-index: 10000 !important;
+
+  /* ⭐ CLAVE: Solo sombra normal, SIN el box-shadow gigante */
+  /* Dejamos que Driver.js maneje el recorte del overlay */
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2),
+    0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+
+  /* Visibilidad */
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.dark .driver-active-element {
+  outline-color: #D4AF37 !important;
+  background-color: #1f2937 !important;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.3),
+    0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ============================================ */
+/* VISIBILIDAD DE ELEMENTOS INTERNOS */
+/* ============================================ */
+
+/* Asegurar que TODO dentro sea visible */
+.driver-active-element,
+.driver-active-element * {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Inputs dentro del elemento destacado */
+.driver-active-element input,
+.driver-active-element select,
+.driver-active-element textarea {
+  background-color: #e5e7eb !important;
+  color: #1f2937 !important;
+  opacity: 1 !important;
+}
+
+.dark .driver-active-element input,
+.dark .driver-active-element select,
+.dark .driver-active-element textarea {
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+/* Botones dentro del elemento destacado */
+.driver-active-element button {
+  opacity: 1 !important;
+}
+
+/* Labels dentro del elemento destacado */
+.driver-active-element label {
+  color: #374151 !important;
+  opacity: 1 !important;
+}
+
+.dark .driver-active-element label {
+  color: #d1d5db !important;
+}
+
+/* ============================================ */
+/* FLECHA DEL POPOVER */
+/* ============================================ */
+
+.driver-popover-arrow {
+  border-color: #ffffff;
+}
+
+.dark .driver-popover-arrow {
+  border-color: #D4AF37;
+}
+
+.driver-popover-arrow-side-top {
+  border-bottom-color: #ffffff;
+}
+
+.dark .driver-popover-arrow-side-top {
+  border-bottom-color: #1f2937;
+}
+
+.driver-popover-arrow-side-bottom {
+  border-top-color: #ffffff;
+}
+
+.dark .driver-popover-arrow-side-bottom {
+  border-top-color: #1f2937;
+}
+
+.driver-popover-arrow-side-left {
+  border-right-color: #ffffff;
+}
+
+.dark .driver-popover-arrow-side-left {
+  border-right-color: #1f2937;
+}
+
+.driver-popover-arrow-side-right {
+  border-left-color: #ffffff;
+}
+
+.dark .driver-popover-arrow-side-right {
+  border-left-color: #1f2937;
+}
+
+/* ============================================ */
+/* ANIMACIONES */
+/* ============================================ */
+
+@keyframes driver-popover-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.driver-popover-custom {
+  animation: driver-popover-fade-in 0.2s ease-out;
+}
+
+/* Animación sutil de pulso en el borde */
+@keyframes driver-pulse {
+  0%,
+  100% {
+    outline-width: 4px;
+  }
+  50% {
+    outline-width: 5px;
+  }
+}
+
+.driver-active-element {
+  animation: driver-pulse 3s ease-in-out infinite;
+}
+
+/* ============================================ */
+/* RESPONSIVE */
+/* ============================================ */
+
+@media (max-width: 640px) {
+  .driver-popover-custom {
+    max-width: 90vw;
+    padding: 16px;
+  }
+
+  .driver-popover-title {
+    font-size: 1rem;
+  }
+
+  .driver-popover-description {
+    font-size: 0.8125rem;
+  }
+
+  .driver-popover-btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .driver-active-element {
+    outline-width: 3px !important;
+  }
+}
+
+/* ============================================ */
+/* FIX ADICIONAL PARA Z-INDEX */
+/* ============================================ */
+
+/* Asegurar que el popover esté por encima de todo */
+.driver-popover {
+  z-index: 10001 !important;
+}

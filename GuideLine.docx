@@ -1,0 +1,192 @@
+CODIGO DORADO: D4AF37
+/************************** BOTONES SEGUN LAS NECESIDADES ***********************************************************************  
+    import Button from "../../components/Button"; // SE DEBE IMPORTAR EL BOTON DEPENDIENDO LA RUTA EN LA QUE ESTES 
+
+    FORMA EN LA QUE SE DEBE DE LLAMAR AL COMPONENTES("BOTON")
+    <Button
+        onClick={handleClearForm} -> FUNCION QUE SE DEBE EJECUTAR AL DAR CLICK LA CUAL SE DEBE DEFINIR Y PASAR COMO PROPS
+        theme="save" -> TEMA DEL BOTON (VER EN COMPONENTE BUTTON LOS TEMAS DISPONIBLES)
+        text="Guardar" -> TEXTO QUE TENDRA EL BOTON
+        size=".5rem" -> TAMAÑO DEL BOTON (VER EN COMPONENTE BUTTON LOS TAMAÑOS DISPONIBLES)
+        loading={loading} -> PROPS QUE INDICA SI EL BOTON ESTA EN ESTADO DE CARGA (TRUE O FALSE)
+        loadingText="Guardando registro..." -> TEXTO QUE SE MOSTRARA CUANDO EL BOTON ESTE EN ESTADO DE CARGA
+        Si tu no agregar el loadingText se mostrara el texto por defecto "Cargando..., Guardando..., etc"
+        disabled={!canDelete} -> PROPS QUE INDICA SI EL BOTON ESTA DESHABILITADO (TRUE O FALSE) ESTE ES MANUAL TIENES QUE GENERAR LA FUNCINO PARA DESABILITARLO Y AGREGAR LA FUNCIONALIDAD DE HABILITARLO AL TERMINAR LO QUE NECESITES
+        PERO SI LO USAS DEBES DEFINIRLO Y PASARLO COMO PROPS
+    />
+    <Button
+        onClick={handleClearForm}
+        theme="save"
+        text="Guardar"
+        size="clamp(0.8rem, 2vw, 0.9rem)"
+        loading={loading}
+        loadingText="Guardando registro..."
+    />
+
+
+    const handleClearForm = () => { -> EJEMPLO DE FUNCION QUE SE DEBE DEFINIR Y PASAR COMO PROPS
+        setForm({ description: "", status: true });
+        setErrors({});
+    };
+
+    clamp() es una función de CSS que se utiliza para limitar un valor dentro de un rango entre un mínimo y un máximo. El valor que se aplica finalmente es un valor dinámico (preferido) que se ajusta entre esos límites.
+
+    La sintaxis general es:
+
+    clamp(Minimo,Valor_Preferido_Maximo)
+    En el código: clamp(0.8rem, 2vw, 0.9rem) significa:
+    MÍNIMO (0.8rem): El tamaño nunca será menor a 0.8rem.
+    VALOR PREFERIDO (2vw): Este es el valor que el navegador intentará aplicar. Es un valor dinámico basado en el ancho de la ventana gráfica (Viewport Width).
+    MÁXIMO (0.9rem): El tamaño nunca será mayor a 0.9rem.
+
+    TEMAS DISPONIBLES 
+    save -> tema verde
+    search -> tema azul
+    update -> tema verde
+    delete -> tema rojo
+    clear -> tema rojo
+    close -> tema rojo
+    edit -> tema amarillo   
+    upload -> tema verde
+    download -> tema azul
+    add -> tema verde
+
+    TAMAÑOS DISPONIBLES
+    .5rem -> tamaño pequeño
+    .75rem -> tamaño mediano
+    1rem -> tamaño grande  
+    1.25rem -> tamaño extra grande
+    1.5rem -> tamaño extra extra grande
+    LOS TAMAÑOS SON EN REM, ES DECIR QUE 1rem ES IGUAL A 16px (16px = 1rem) PUEDES ELEJIR EL TAMAÑO QUE MAS TE GUSTE
+    PUEDES COMBINAR LOS TEMAS Y TAMAÑOS SEGUN LAS NECESIDADES 
+/************************** BOTONES SEGUN LAS NECESIDADES ***********************************************************************  
+
+
+/************************** TABLAS SEGUN LAS NECESIDADES ***********************************************************************
+
+//importas el componente para poder usarlo 
+import {
+  Table,
+  Badge,
+  StatusBadge,
+  ActionButtons,
+} from "../../components/Table1";
+
+Componentes disponibles:
+
+Table: Componente principal
+Badge: Etiquetas de categoría
+StatusBadge: Estado con indicador (activo/inactivo)
+ActionButtons: Botones de acciones (editar/eliminar/ver)
+AvatarCell: Celda con imagen y texto (opcional)
+
+Define tu interfaz de datos
+interface BusinessLine {
+  id: number;
+  description: string;
+  status: boolean;
+}
+
+Define las columnas
+const columns = [
+  {
+    key: "id",
+    header: "ID",
+    width: "100px",
+    align: "center" as const,
+    render: (row: BusinessLine) => (
+      <Badge text={`#${row.id}`} variant="primary" />
+    ),
+  },
+  {
+    key: "description",
+    header: "Descripción",
+    align: "left" as const,
+    render: (row: BusinessLine) => (
+      <span className="font-medium">{row.description}</span>
+    ),
+  },
+  {
+    key: "status",
+    header: "Estatus",
+    width: "150px",
+    align: "center" as const,
+    render: (row: BusinessLine) => (
+      <StatusBadge
+        status={row.status ? "active" : "inactive"}
+        text={row.status ? "Activo" : "Inactivo"}
+      />
+    ),
+  },
+  {
+    key: "actions",
+    header: "Acciones",
+    width: "150px",
+    align: "center" as const,
+    render: (row: BusinessLine) => (
+      <ActionButtons
+        onEdit={() => handleEdit(row)}
+        onDelete={() => handleDelete(row)}
+      />
+    ),
+  },
+];
+
+ Propiedades del Table
+Prop                        Tipo                    Requerido                   Default                   Descripción  
+
+data                        T[]                         ✅                          -                       Array de datos a mostrar
+columns                     Column<T>[]                 ✅                          -                       Definición de columnas
+keyExtractor                (row: T) => string | number ✅                          -                       Función para obtener key única
+onRowClick                  (row: T) => void            ❌                          -                       Callback al hacer click en fila
+loading                     boolean                     ❌                          false                   Muestra spinner de carga
+emptyMessage                string                      ❌                          "No hay resultados"     Mensaje cuando no hay datosmobile
+CardRender                  (row: T, index: number)     ❌                          Auto                    Render personalizado para tarjetas móviles 
+                            => React.ReactNode  
+mobileBreakpoint            "sm" | "md" | "lg"          ❌                          "md"                    Punto de quiebre responsive
+
+// forma de usar la tabla sencilla y sigue siendo repsonsiva 
+Usa el componente
+<Table
+  data={filteredData}
+  columns={columns}
+  keyExtractor={(row) => row.id}
+  loading={loading}
+  emptyMessage="No hay registros"
+/>
+
+// forma de usar la tabla personaalizad es ma laborioso pero puedes seleccionar como mostrar las cosas 
+{/* ✨ TABLA UNIFICADA - SE ADAPTA AUTOMÁTICAMENTE */}
+        <Table
+          data={filteredLines}
+          columns={columns}
+          keyExtractor={(row) => row.id}
+          loading={loading}
+          emptyMessage="No hay líneas de negocio registradas"
+          mobileBreakpoint="md"
+          mobileCardRender={(row) => (
+            <div className="space-y-3">
+              <div className="flex justify-between items-start">
+                <Badge text={`#${row.id}`} variant="primary" />
+                <StatusBadge
+                  status={row.status ? "active" : "inactive"}
+                  text={row.status ? "Activo" : "Inactiva"}
+                  showIndicator={true}
+                />
+              </div>
+              <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                {row.description}
+              </p>
+              <ActionButtons
+                onEdit={() => handleEdit(row)}
+                onDelete={() => handleDelete(row)}
+              />
+            </div>
+          )}
+        />
+
+
+/************************** TABLAS SEGUN LAS NECESIDADES ***********************************************************************  
+
+Instalacion de driver.js para los tour de los modulos
+npm install driver.js
