@@ -1,26 +1,23 @@
-// src/pages/Catalogos/BusinessLine.tsx
+// src/pages/Catalogos/Color.tsx
 import React, { useEffect, useState } from "react";
-import api from "../../../services/api";
+import api from "../../../../services/api";
 import * as XLSX from "xlsx";
-import Button from "../../components/ui/button/Button";
-import { Table, Badge, StatusBadge } from "../../components/Table1";
+import Button from "../../../components/ui/button/Button";
+import { Table, Badge } from "../../../components/Table1";
 
-interface BusinessLine {
+interface Color {
   id: number;
-  name: string;
-  status: boolean;
+  description: string;
 }
 
 interface ValidationErrors {
-  name?: string[];
-  status?: string[];
+  description?: string[];
 }
 
-export default function LineaDeNegocio() {
-  const [businessLines, setBusinessLines] = useState<BusinessLine[]>([]);
-  const [form, setForm] = useState<Omit<BusinessLine, "id">>({
-    name: "",
-    status: true,
+export default function Colores() {
+  const [colors, setColors] = useState<Color[]>([]);
+  const [form, setForm] = useState<Omit<Color, "id">>({
+    description: "",
   });
   const [errors, setErrors] = useState<ValidationErrors>(
     {} as ValidationErrors
@@ -30,16 +27,16 @@ export default function LineaDeNegocio() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchBusinessLines();
+    fetchColors();
   }, []);
 
-  const fetchBusinessLines = async () => {
+  const fetchColors = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/business-lines");
-      setBusinessLines(response.data);
+      const response = await api.get("/colors");
+      setColors(response.data);
     } catch (error) {
-      console.error("Error al obtener las líneas de negocio", error);
+      console.error("Error al obtener los colores", error);
     } finally {
       setLoading(false);
     }
@@ -53,7 +50,7 @@ export default function LineaDeNegocio() {
       [name]:
         type === "checkbox"
           ? checked
-          : name === "name"
+          : name === "description"
           ? value.toUpperCase()
           : value,
     });
@@ -66,50 +63,48 @@ export default function LineaDeNegocio() {
 
     try {
       if (editingId) {
-        const response = await api.put(`/business-lines/${editingId}`, form);
-        setBusinessLines(
-          businessLines.map((line) =>
-            line.id === editingId ? response.data : line
+        const response = await api.put(`/colors/${editingId}`, form);
+        setColors(
+          colors.map((color) =>
+            color.id === editingId ? response.data : color
           )
         );
         setEditingId(null);
       } else {
-        const response = await api.post("/business-lines", form);
-        setBusinessLines([...businessLines, response.data]);
+        const response = await api.post("/colors", form);
+        setColors([...colors, response.data]);
       }
-      setForm({ name: "", status: true });
+      setForm({ description: "" });
     } catch (error: any) {
       if (error.response?.status === 422) {
         setErrors(error.response.data.errors || {});
       } else {
-        console.error("Error al guardar la línea de negocio", error);
+        console.error("Error al guardar el color", error);
       }
     } finally {
       setLoading(false);
     }
   };
-
   const handleCancelEdit = () => {
-    setForm({ name: "", status: true });
+    setForm({ description: "" });
     setEditingId(null);
     setErrors({});
   };
 
-  const filteredLines = businessLines.filter((line) =>
-    line.name.toLowerCase().includes(search.toLowerCase())
+  const filteredColors = colors.filter((color) =>
+    color.description.toLowerCase().includes(search.toLowerCase())
   );
 
   const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
-      filteredLines.map((line) => ({
-        ID: line.id,
-        Descripción: line.name,
-        Estatus: line.status ? "Activo" : "Inactiva",
+      filteredColors.map((color) => ({
+        ID: color.id,
+        Descripción: color.description,
       }))
     );
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Líneas de Negocio");
-    XLSX.writeFile(wb, "segmentos_de_negocio.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Colores");
+    XLSX.writeFile(wb, "colores.xlsx");
   };
 
   // 🎯 DEFINICIÓN DE COLUMNAS PARA LA TABLA
@@ -119,31 +114,16 @@ export default function LineaDeNegocio() {
       header: "ID",
       width: "100px",
       align: "center" as const,
-      render: (row: BusinessLine) => (
-        <Badge text={`#${row.id}`} variant="primary" />
-      ),
+      render: (row: Color) => <Badge text={`#${row.id}`} variant="primary" />,
     },
     {
-      key: "name",
+      key: "description",
       header: "Descripción",
       align: "center" as const,
-      render: (row: BusinessLine) => (
+      render: (row: Color) => (
         <span className="font-medium text-gray-900 dark:text-gray-100">
-          {row.name}
+          {row.description}
         </span>
-      ),
-    },
-    {
-      key: "status",
-      header: "Estatus",
-      width: "150px",
-      align: "center" as const,
-      render: (row: BusinessLine) => (
-        <StatusBadge
-          status={row.status ? "active" : "inactive"}
-          text={row.status ? "Activo" : "Inactiva"}
-          showIndicator={true}
-        />
       ),
     },
   ];
@@ -152,7 +132,7 @@ export default function LineaDeNegocio() {
     <div className="p-3 sm:p-4 md:p-6 min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="w-full max-w-5xl mx-auto overflow-x-hidden bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg border border-gray-300 dark:border-gray-700">
         <h1 className="text-2xl sm:text-3xl font-bold text-blue-700 dark:text-yellow-500 mb-4 sm:mb-6">
-          Segmento de Negocio
+          Colores
         </h1>
 
         {/* ✅ FORMULARIO */}
@@ -184,30 +164,17 @@ export default function LineaDeNegocio() {
             </label>
             <input
               type="text"
-              name="name"
-              value={form.name}
+              name="description"
+              value={form.description}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-400 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
-              placeholder="Ej. Ventas, Soporte..."
+              placeholder="Ej. ROJO, AZUL, VERDE..."
             />
-            {errors.name && (
+            {errors.description && (
               <p className="text-red-500 dark:text-red-400 text-xs sm:text-sm mt-1">
-                {errors.name.join(", ")}
+                {errors.description.join(", ")}
               </p>
             )}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="status"
-              checked={form.status}
-              onChange={handleChange}
-              className="accent-blue-500 w-4 h-4 sm:w-5 sm:h-5"
-            />
-            <label className="text-sm sm:text-base text-gray-700 dark:text-gray-300">
-              Activo
-            </label>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -249,37 +216,30 @@ export default function LineaDeNegocio() {
           </div>
 
           <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            Mostrando {filteredLines.length} de {businessLines.length}{" "}
-            {businessLines.length === 1 ? "registro" : "registros"}
+            Mostrando {filteredColors.length} de {filteredColors.length}{" "}
+            {filteredColors.length === 1 ? "registro" : "registros"}
           </div>
         </div>
 
         {/* ✨ TABLA UNIFICADA - SE ADAPTA AUTOMÁTICAMENTE */}
-        <div className="overflow-x-auto">
         <Table
-          data={filteredLines}
+          data={filteredColors}
           columns={columns}
           keyExtractor={(row) => row.id}
           loading={loading}
-          emptyMessage="No hay líneas de negocio registradas"
+          emptyMessage="No hay colores registrados"
           mobileBreakpoint="md"
           mobileCardRender={(row) => (
             <div className="space-y-3">
               <div className="flex justify-between items-start">
                 <Badge text={`#${row.id}`} variant="primary" />
-                <StatusBadge
-                  status={row.status ? "active" : "inactive"}
-                  text={row.status ? "Activo" : "Inactiva"}
-                  showIndicator={true}
-                />
               </div>
               <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                {row.name}
+                {row.description}
               </p>
             </div>
           )}
         />
-        </div>
       </div>
     </div>
   );

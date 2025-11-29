@@ -11,7 +11,7 @@ class ShiftTypeController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $shiftTypes = ShiftType::with('businessLine:id,description')->orderBy('name', 'asc')->get();
+            $shiftTypes = ShiftType::with('businessLine:id,name')->orderBy('name', 'asc')->get();
             return response()->json(['data' => $shiftTypes], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error al obtener tipos de turno', 'error' => $e->getMessage()], 500);
@@ -22,7 +22,7 @@ class ShiftTypeController extends Controller
     {
         try {
             $shiftTypes = ShiftType::where('business_line_id', $businessLineId)
-                                   ->with('businessLine:id,description')
+                                   ->with('businessLine:id,name')
                                    ->orderBy('name', 'asc')
                                    ->get();
             return response()->json(['data' => $shiftTypes], 200);
@@ -34,7 +34,7 @@ class ShiftTypeController extends Controller
     public function show(string $id): JsonResponse
     {
         try {
-            $shiftType = ShiftType::with('businessLine:id,description')->findOrFail($id);
+            $shiftType = ShiftType::with('businessLine:id,name')->findOrFail($id);
             return response()->json(['data' => $shiftType], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Tipo de turno no encontrado'], 404);

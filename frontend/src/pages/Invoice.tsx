@@ -20,7 +20,7 @@ interface Supplier {
 
 interface BusinessLine {
   id: number;
-  description: string;
+  name: string;
 }
 
 interface FederalEntity {
@@ -881,7 +881,7 @@ const fetchColorsByUniformAndSize = async (uniformTypeId: number, sizeId: number
         filteredInvoices.map((invoice) => ({
           Folio: invoice.folio,
           Proveedor: invoice.supplier?.legal_name || "N/A",
-          "Línea Negocio": invoice.business_line?.description || "N/A",
+          "Segmento Negocio": invoice.business_line?.name || "N/A",
           "Tipo Pago": invoice.payment_type,
           Subtotal: invoice.subtotal,
           IVA: invoice.iva,
@@ -1044,7 +1044,7 @@ const fetchColorsByUniformAndSize = async (uniformTypeId: number, sizeId: number
   return (
     <div className="p-3 sm:p-4 md:p-6 min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {ToastComponent}
-      <div className="max-w-7xl  mx-auto bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg border border-gray-300 dark:border-gray-700">
+      <div className="w-full max-w-5xl mx-auto overflow-x-hidden bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg border border-gray-300 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-blue-700 dark:text-yellow-500">
             Facturas
@@ -1083,6 +1083,7 @@ const fetchColorsByUniformAndSize = async (uniformTypeId: number, sizeId: number
         </div>
 
         {/* TABLA */}
+        <div className="overflow-x-auto">
         <Table
           data={filteredInvoices}
           columns={columns}
@@ -1149,6 +1150,7 @@ const fetchColorsByUniformAndSize = async (uniformTypeId: number, sizeId: number
             </div>
           )}
         />
+        </div>
       </div>
 
       {isModalOpen && (
@@ -1338,10 +1340,10 @@ const fetchColorsByUniformAndSize = async (uniformTypeId: number, sizeId: number
                               : "border-gray-300 dark:border-gray-600"
                           } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         >
-                          <option value={0}>Seleccione una línea</option>
+                          <option value={0}>Seleccione un segmento</option>
                           {businessLines.map((line) => (
                             <option key={line.id} value={line.id}>
-                              {line.description}
+                              {line.name}
                             </option>
                           ))}
                         </select>

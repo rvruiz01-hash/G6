@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('rfc', 13)->nullable()->unique()->comment('RFC del proveedor');
             
             // Información de contacto
-            $table->string('contact_person', 100)->comment('Persona de contacto');
+            $table->string('contact_person', 255)->comment('Persona de contacto');
             $table->string('contact_number', 10)->nullable()->comment('Número de contacto');
             $table->string('email', 100)->unique()->comment('Email del proveedor');
             $table->string('phone', 10)->comment('Teléfono principal');
@@ -31,7 +31,7 @@ return new class extends Migration
             $table->foreignId('bank_id')
                 ->nullable()
                 ->constrained('banks')
-                ->nullOnDelete('restrict')
+                ->nullOnDelete()
                 ->comment('Relación con el banco');
             
             $table->string('account_number', 20)->nullable()->comment('Número de cuenta bancaria');
@@ -39,7 +39,7 @@ return new class extends Migration
             
             // Información fiscal y ubicación
             $table->text('fiscal_address')->comment('Domicilio fiscal completo');
-            $table->string('postal_code', 10)->nullable()->comment('Código postal');
+            $table->string('postal_code', 5)->nullable()->comment('Código postal');
 
             $table->char('federal_entity_id', 2)->nullable();
             $table->foreign('federal_entity_id')

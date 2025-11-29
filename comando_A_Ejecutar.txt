@@ -6,5 +6,5 @@ composer require propaganistas/laravel-disposable-email
 
 // para que jale el pdf de el cotizador 
 composer require barryvdh/laravel-dompdf
-
-php artisan vendor:publish --provider="Barryvdh\DomPDF\ServiceProvider"
+composer require setasign/fpdi
+composer require tecnickcom/tcpdf

@@ -41,9 +41,9 @@ class SupplierController extends Controller
             // ✅ VALIDACIÓN CORREGIDA
             $validated = $request->validate([
                 // Información general
-                'contractor_number' => 'required|string|max:50|unique:suppliers,contractor_number',
-                'legal_name' => 'required|string|max:255',
-                'trade_name' => 'nullable|string|max:255',
+                'contractor_number' => 'required|string|max:10|unique:suppliers,contractor_number',
+                'legal_name' => 'required|string|max:190',
+                'trade_name' => 'nullable|string|max:200',
                 'rfc' => 'nullable|string|size:13|unique:suppliers,rfc',
                 
                 // Información de contacto
@@ -52,13 +52,14 @@ class SupplierController extends Controller
                 'email' => [
                     'required',
                     'email:rfc,dns', // ✅ Usar validación nativa de Laravel
-                    'max:255',
+                    'max:100',
                     Rule::unique('suppliers', 'email')
                 ],
-                'phone' => 'required|string|regex:/^[0-9]+$/|max:10',
+                'phone' => 'required|string|size:10|regex:/^[0-9]+$/',
                 'website' => 'nullable|url|max:255',
                 
                 // Información bancaria
+                // 'bank_id' => 'nullable|exists:banks,id',
                 'account_number' => 'nullable|string|max:20',
                 'clabe' => 'nullable|string|size:18',
                 
@@ -66,8 +67,8 @@ class SupplierController extends Controller
                 'fiscal_address' => 'required|string|max:500',
                 'postal_code' => 'nullable|string|size:5',
                 'federal_entity_id' => 'nullable|exists:federal_entities,id',
-                'municipalities_id' => 'nullable|exists:municipalities,id',
-                'colonies_id' => 'nullable|exists:colonies,id',
+                'municipality_id' => 'nullable|exists:municipalities,id',
+                'colony_id' => 'nullable|exists:colonies,id',
                 
                 // Notas y estado
                 'notes' => 'nullable|string',
@@ -159,7 +160,7 @@ class SupplierController extends Controller
                 'contractor_number' => [
                     'required',
                     'string',
-                    'max:50',
+                    'max:10',
                     Rule::unique('suppliers', 'contractor_number')->ignore($supplier->id)
                 ],
                 'legal_name' => 'required|string|max:255',
@@ -180,7 +181,7 @@ class SupplierController extends Controller
                     'max:255',
                     Rule::unique('suppliers', 'email')->ignore($supplier->id)
                 ],
-                'phone' => 'required|string|max:20',
+                'phone' => 'required|string|max:10',
                 'website' => 'nullable|url|max:255',
                 
                 // Información bancaria
@@ -192,8 +193,8 @@ class SupplierController extends Controller
                 'fiscal_address' => 'nullable|string|max:500',
                 'postal_code' => 'nullable|string|size:5',
                 'federal_entity_id' => 'nullable|exists:federal_entities,id',
-                'municipalities_id' => 'nullable|exists:municipalities,id',
-                'colonies_id' => 'nullable|exists:colonies,id',
+                'municipality_id' => 'nullable|exists:municipalities,id',
+                'colony_id' => 'nullable|exists:colonies,id',
                 
                 // Notas y estado
                 'notes' => 'nullable|string',
@@ -213,8 +214,8 @@ class SupplierController extends Controller
                 'clabe.size' => 'La CLABE debe tener exactamente 18 dígitos',
                 'postal_code.size' => 'El código postal debe tener 5 dígitos',
                 'federal_entity_id.exists' => 'La entidad federativa seleccionada no existe',
-                'municipalities_id.exists' => 'El municipio seleccionado no existe',
-                'colonies_id.exists' => 'La colonia seleccionada no existe',
+                'municipality_id.exists' => 'El municipio seleccionado no existe',
+                'colony_id.exists' => 'La colonia seleccionada no existe',
             ]);
 
             // Actualizar el proveedor

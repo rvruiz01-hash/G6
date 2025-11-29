@@ -3,24 +3,22 @@ import React, { useEffect, useState } from "react";
 import api from "../../../services/api";
 import * as XLSX from "xlsx";
 import Button from "../../components/ui/button/Button";
-import { Table, Badge, StatusBadge } from "../../components/Table1";
+import { Table, Badge, ActionButtons } from "../../components/Table1";
 
-interface BusinessLine {
+interface BodyPart {
   id: number;
-  name: string;
-  status: boolean;
+  description: string;
 }
 
 interface ValidationErrors {
-  name?: string[];
+  description?: string[];
   status?: string[];
 }
 
-export default function LineaDeNegocio() {
-  const [businessLines, setBusinessLines] = useState<BusinessLine[]>([]);
-  const [form, setForm] = useState<Omit<BusinessLine, "id">>({
-    name: "",
-    status: true,
+export default function PartesCorporales() {
+  const [bodyPart, setBodyPart] = useState<BodyPart[]>([]);
+  const [form, setForm] = useState<Omit<BodyPart, "id">>({
+    description: "",
   });
   const [errors, setErrors] = useState<ValidationErrors>(
     {} as ValidationErrors
@@ -30,16 +28,16 @@ export default function LineaDeNegocio() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchBusinessLines();
+    fetchBodyPart();
   }, []);
 
-  const fetchBusinessLines = async () => {
+  const fetchBodyPart = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/business-lines");
-      setBusinessLines(response.data);
+      const response = await api.get("/body-parts");
+      setBodyPart(response.data);
     } catch (error) {
-      console.error("Error al obtener las líneas de negocio", error);
+      console.error("Error al obtener las Partes corporales", error);
     } finally {
       setLoading(false);
     }
@@ -53,7 +51,7 @@ export default function LineaDeNegocio() {
       [name]:
         type === "checkbox"
           ? checked
-          : name === "name"
+          : name === "description"
           ? value.toUpperCase()
           : value,
     });
@@ -66,50 +64,71 @@ export default function LineaDeNegocio() {
 
     try {
       if (editingId) {
-        const response = await api.put(`/business-lines/${editingId}`, form);
-        setBusinessLines(
-          businessLines.map((line) =>
-            line.id === editingId ? response.data : line
+        const response = await api.put(`/body-parts/${editingId}`, form);
+        setBodyPart(
+          bodyPart.map((BodyP) =>
+            BodyP.id === editingId ? response.data : BodyP
           )
         );
         setEditingId(null);
       } else {
-        const response = await api.post("/business-lines", form);
-        setBusinessLines([...businessLines, response.data]);
+        const response = await api.post("/body-parts", form);
+        setBodyPart([...bodyPart, response.data]);
       }
-      setForm({ name: "", status: true });
+      setForm({ description: "" });
     } catch (error: any) {
       if (error.response?.status === 422) {
         setErrors(error.response.data.errors || {});
       } else {
-        console.error("Error al guardar la línea de negocio", error);
+        console.error("Error al guardar la parte corporal", error);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleEdit = (bodyP: BodyPart) => {
+    setForm({
+      description: bodyP.description,
+    });
+    setEditingId(bodyP.id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (bodyP: BodyPart) => {
+    if (!window.confirm(`¿Estás seguro de eliminar "${bodyP.description}"?`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`/body-parts/${bodyP.id}`);
+      setBodyPart(bodyPart.filter((l) => l.id !== bodyP.id));
+    } catch (error) {
+      console.error("Error al eliminar la parte corporal", error);
+      alert("Error al eliminar. Por favor intenta de nuevo.");
+    }
+  };
+
   const handleCancelEdit = () => {
-    setForm({ name: "", status: true });
+    setForm({ description: "" });
     setEditingId(null);
     setErrors({});
   };
 
-  const filteredLines = businessLines.filter((line) =>
-    line.name.toLowerCase().includes(search.toLowerCase())
+  const filteredBodyP = bodyPart.filter((bodyP) =>
+    bodyP.description.toLowerCase().includes(search.toLowerCase())
   );
 
   const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
-      filteredLines.map((line) => ({
-        ID: line.id,
-        Descripción: line.name,
-        Estatus: line.status ? "Activo" : "Inactiva",
+      filteredBodyP.map((bodyP) => ({
+        ID: bodyP.id,
+        Descripción: bodyP.description,
       }))
     );
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Líneas de Negocio");
-    XLSX.writeFile(wb, "segmentos_de_negocio.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Partes Corporales");
+    XLSX.writeFile(wb, "partes_corporales.xlsx");
   };
 
   // 🎯 DEFINICIÓN DE COLUMNAS PARA LA TABLA
@@ -119,30 +138,29 @@ export default function LineaDeNegocio() {
       header: "ID",
       width: "100px",
       align: "center" as const,
-      render: (row: BusinessLine) => (
+      render: (row: BodyPart) => (
         <Badge text={`#${row.id}`} variant="primary" />
       ),
     },
     {
-      key: "name",
+      key: "description",
       header: "Descripción",
       align: "center" as const,
-      render: (row: BusinessLine) => (
+      render: (row: BodyPart) => (
         <span className="font-medium text-gray-900 dark:text-gray-100">
-          {row.name}
+          {row.description}
         </span>
       ),
     },
     {
-      key: "status",
-      header: "Estatus",
+      key: "actions",
+      header: "Acciones",
       width: "150px",
       align: "center" as const,
-      render: (row: BusinessLine) => (
-        <StatusBadge
-          status={row.status ? "active" : "inactive"}
-          text={row.status ? "Activo" : "Inactiva"}
-          showIndicator={true}
+      render: (row: BodyPart) => (
+        <ActionButtons
+          onEdit={() => handleEdit(row)}
+          onDelete={() => handleDelete(row)}
         />
       ),
     },
@@ -152,7 +170,7 @@ export default function LineaDeNegocio() {
     <div className="p-3 sm:p-4 md:p-6 min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="w-full max-w-5xl mx-auto overflow-x-hidden bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg border border-gray-300 dark:border-gray-700">
         <h1 className="text-2xl sm:text-3xl font-bold text-blue-700 dark:text-yellow-500 mb-4 sm:mb-6">
-          Segmento de Negocio
+          Partes Corporales
         </h1>
 
         {/* ✅ FORMULARIO */}
@@ -184,30 +202,17 @@ export default function LineaDeNegocio() {
             </label>
             <input
               type="text"
-              name="name"
-              value={form.name}
+              name="description"
+              value={form.description}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-400 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
-              placeholder="Ej. Ventas, Soporte..."
+              placeholder="Ej. Piernas, Torso..."
             />
-            {errors.name && (
+            {errors.description && (
               <p className="text-red-500 dark:text-red-400 text-xs sm:text-sm mt-1">
-                {errors.name.join(", ")}
+                {errors.description.join(", ")}
               </p>
             )}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="status"
-              checked={form.status}
-              onChange={handleChange}
-              className="accent-blue-500 w-4 h-4 sm:w-5 sm:h-5"
-            />
-            <label className="text-sm sm:text-base text-gray-700 dark:text-gray-300">
-              Activo
-            </label>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -249,37 +254,34 @@ export default function LineaDeNegocio() {
           </div>
 
           <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            Mostrando {filteredLines.length} de {businessLines.length}{" "}
-            {businessLines.length === 1 ? "registro" : "registros"}
+            Mostrando {filteredBodyP.length} de {filteredBodyP.length}{" "}
+            {filteredBodyP.length === 1 ? "registro" : "registros"}
           </div>
         </div>
 
         {/* ✨ TABLA UNIFICADA - SE ADAPTA AUTOMÁTICAMENTE */}
-        <div className="overflow-x-auto">
         <Table
-          data={filteredLines}
+          data={filteredBodyP}
           columns={columns}
           keyExtractor={(row) => row.id}
           loading={loading}
-          emptyMessage="No hay líneas de negocio registradas"
+          emptyMessage="No hay Partes Corporales registradas"
           mobileBreakpoint="md"
           mobileCardRender={(row) => (
             <div className="space-y-3">
               <div className="flex justify-between items-start">
                 <Badge text={`#${row.id}`} variant="primary" />
-                <StatusBadge
-                  status={row.status ? "active" : "inactive"}
-                  text={row.status ? "Activo" : "Inactiva"}
-                  showIndicator={true}
-                />
               </div>
               <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                {row.name}
+                {row.description}
               </p>
+              <ActionButtons
+                onEdit={() => handleEdit(row)}
+                onDelete={() => handleDelete(row)}
+              />
             </div>
           )}
         />
-        </div>
       </div>
     </div>
   );

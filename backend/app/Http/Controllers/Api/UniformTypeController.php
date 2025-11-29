@@ -21,7 +21,7 @@ class UniformTypeController extends Controller
         try {
             $uniformTypes = UniformType::with([
                 'bodyPart:id,description',
-                'businessLine:id,description',
+                'businessLine:id,name',
                 'sexe:id,name',
                 'color:id,description'
             ])
@@ -95,7 +95,7 @@ class UniformTypeController extends Controller
             // Cargar las relaciones para la respuesta
             $uniformType->load([
                 'bodyPart:id,description',
-                'businessLine:id,description',
+                'businessLine:id,name',
                 'sexe:id,name',
                 'color:id,description'
             ]);
@@ -178,8 +178,8 @@ class UniformTypeController extends Controller
             DB::commit();
 
             // Cargar relaciones para la respuesta
-            $uniformTypeFemenino->load(['sexe:id,name', 'bodyPart:id,description', 'businessLine:id,description', 'color:id,description']);
-            $uniformTypeMasculino->load(['sexe:id,name', 'bodyPart:id,description', 'businessLine:id,description', 'color:id,description']);
+            $uniformTypeFemenino->load(['sexe:id,name', 'bodyPart:id,description', 'businessLine:id,name', 'color:id,description']);
+            $uniformTypeMasculino->load(['sexe:id,name', 'bodyPart:id,description', 'businessLine:id,name', 'color:id,description']);
 
             return response()->json([
                 'message' => 'Tipos de uniformes creados exitosamente para ambos sexos',
@@ -209,7 +209,7 @@ class UniformTypeController extends Controller
         try {
             $uniformType = UniformType::with([
                 'bodyPart:id,description',
-                'businessLine:id,description',
+                'businessLine:id,name',
                 'sexe:id,name',
                 'color:id,description'
             ])->findOrFail($id);
@@ -275,7 +275,7 @@ class UniformTypeController extends Controller
             // Cargar las relaciones para la respuesta
             $uniformType->load([
                 'bodyPart:id,description',
-                'businessLine:id,description',
+                'businessLine:id,name',
                 'sexe:id,name',
                 'color:id,description'
             ]);

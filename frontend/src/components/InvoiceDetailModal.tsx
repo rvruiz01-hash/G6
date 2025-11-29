@@ -45,7 +45,7 @@ interface Invoice {
   };
   business_line?: {
     id: number;
-    description: string;
+    name: string;
   };
   federal_entity?: {
     id: string;
@@ -202,7 +202,7 @@ export default function InvoiceDetailModal({
                       Línea de Negocio:
                     </span>
                     <p className="text-gray-900 dark:text-gray-100">
-                      {invoice.business_line?.description || "N/A"}
+                      {invoice.business_line?.name || "N/A"}
                     </p>
                   </div>
                 </div>

@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\QuoterPdfService;
 
 class QuoterController extends Controller
 {
@@ -568,67 +569,211 @@ class QuoterController extends Controller
         }
     }
 
-    public function generatePdf(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'business_line_id' => 'required|exists:business_lines,id',
-                'shift_type_id' => 'required|exists:shift_types,id',
-                'federal_entity_id' => 'required|exists:federal_entities,id',
-                'net_salary' => 'required|numeric|min:0',
-                'total_elements' => 'required|integer|min:1',
-                'total_rest_days' => 'required|integer|min:0',
-                'has_holidays' => 'boolean',
-                'has_day_31' => 'boolean',
-                'uniforms' => 'required|array|min:1',
-                'uniforms.*.uniform_stock_id' => 'required|exists:uniform_stock,id',
-                'uniforms.*.quantity' => 'required|integer|min:1',
-            ]);
 
-            $calculationResponse = $this->calculate($request);
-            $calculationData = json_decode($calculationResponse->getContent(), true);
+public function generatePdf(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'business_line_id' => 'required|exists:business_lines,id',
+            'shift_type_id' => 'required|exists:shift_types,id',
+            'federal_entity_id' => 'required|exists:federal_entities,id',
+            'net_salary' => 'required|numeric|min:0',
+            'total_elements' => 'required|integer|min:1',
+            'total_rest_days' => 'required|integer|min:0',
+            'has_holidays' => 'boolean',
+            'has_day_31' => 'boolean',
+            'uniforms' => 'required|array|min:1',
+            'uniforms.*.uniform_stock_id' => 'required|exists:uniform_stock,id',
+            'uniforms.*.quantity' => 'required|integer|min:1',
+        ]);
 
-            if (!isset($calculationData['data'])) {
-                return response()->json(['message' => 'Error al calcular cotización'], 500);
-            }
+        // Obtener los cálculos
+        $calculationResponse = $this->calculate($request);
+        $calculationData = json_decode($calculationResponse->getContent(), true);
 
-            $result = $calculationData['data'];
-
-            $businessLine = BusinessLine::find($validated['business_line_id']);
-            $shiftType = ShiftType::find($validated['shift_type_id']);
-            $federalEntity = FederalEntity::find($validated['federal_entity_id']);
-
-            $uniformsData = $result['uniforms_details'] ?? [];
-
-            $data = [
-                'folio' => $result['folio'],
-                'business_line' => $businessLine->description ?? 'N/A',
-                'shift_type' => $shiftType->name ?? 'N/A',
-                'federal_entity' => $federalEntity->name ?? 'N/A',
-                'total_elements' => $validated['total_elements'],
-                'total_rest_days' => $validated['total_rest_days'],
-                'net_salary' => $validated['net_salary'],
-                'has_holidays' => $validated['has_holidays'] ?? false,
-                'has_day_31' => $validated['has_day_31'] ?? false,
-                'uniforms' => $uniformsData,
-            ];
-
-            $pdf = Pdf::loadView('quoter.pdf', [
-                'data' => $data,
-                'result' => $result
-            ]);
-
-            $pdf->setPaper('letter', 'portrait');
-
-            $filename = 'Cotizacion_' . $result['folio'] . '.pdf';
-
-            return $pdf->stream($filename);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Error al generar PDF',
-                'error' => $e->getMessage()
-            ], 500);
+        if (!isset($calculationData['data'])) {
+            return response()->json(['message' => 'Error al calcular cotización'], 500);
         }
+
+        $result = $calculationData['data'];
+
+        // Obtener información de catálogos
+        $businessLine = \App\Models\BusinessLine::find($validated['business_line_id']);
+        $shiftType = \App\Models\ShiftType::find($validated['shift_type_id']);
+        $federalEntity = \App\Models\FederalEntity::find($validated['federal_entity_id']);
+
+        // ✅ CREAR INSTANCIA DEL SERVICIO PDF
+        $pdf = new \App\Services\QuoterPdfService();
+        
+        // ============================================================
+        // PÁGINA 1: INFORMACIÓN GENERAL Y DESGLOSE
+        // ============================================================
+        $pdf->addTemplatedPage();
+        $pdf->addCompanyName('G6 SEGURIDAD PRIVADA');
+        
+        // Información del Cliente
+        $pdf->addSectionTitle('INFORMACIÓN DEL CLIENTE');
+        $pdf->addInfoTable([
+            ['label' => 'Nombre/Razón Social:', 'value' => '[NOMBRE DEL CLIENTE]'],
+            ['label' => 'Dirección:', 'value' => '[DIRECCIÓN DEL CLIENTE]'],
+            ['label' => 'Teléfono:', 'value' => '[TELÉFONO DEL CLIENTE]'],
+            ['label' => 'Correo Electrónico:', 'value' => '[CORREO DEL CLIENTE]'],
+        ]);
+        
+        // Datos de la Cotización
+        $pdf->addSectionTitle('DATOS DE LA COTIZACIÓN');
+        $pdf->addInfoTable([
+            ['label' => 'Cotización Nº:', 'value' => $result['folio'] ?? 'N/A'],
+            ['label' => 'Fecha:', 'value' => date('d/m/Y')],
+            ['label' => 'Validez:', 'value' => '30 días'],
+            ['label' => 'No. de Vendedor:', 'value' => '[VENDEDOR]'],
+        ]);
+        
+        // Detalle del Servicio
+        $pdf->addSectionTitle('DETALLE DEL SERVICIO DE SEGURIDAD');
+        $pdf->addInfoTable([
+            ['label' => 'Línea de Negocio:', 'value' => $businessLine->description ?? 'N/A'],
+            ['label' => 'Tipo de Turno:', 'value' => $shiftType->name ?? 'N/A'],
+            ['label' => 'Entidad Federativa:', 'value' => $federalEntity->name ?? 'N/A'],
+            ['label' => 'Número de Elementos:', 'value' => $validated['total_elements']],
+            ['label' => 'Sueldo Neto Base:', 'value' => '$' . number_format($validated['net_salary'], 2)],
+            ['label' => 'Días de Descanso:', 'value' => $validated['total_rest_days'] . ' por mes'],
+        ]);
+        
+        // Desglose de Costos
+        $pdf->addSectionTitle('DESGLOSE DE COSTOS POR ELEMENTO');
+        
+        $costsData = [
+            // SUELDO MENSUAL
+            ['type' => 'category', 'label' => 'SUELDO MENSUAL', 'value' => '$' . number_format($result['monthly_salary'], 2)],
+            ['type' => 'item', 'label' => '• Sueldo Base', 'value' => '$' . number_format($validated['net_salary'], 2)],
+            ['type' => 'item', 'label' => '• Descansos', 'value' => '$' . number_format($result['breakdown']['rest_days_pay'], 2)],
+        ];
+        
+        if (($result['breakdown']['holiday_pay'] ?? 0) > 0) {
+            $costsData[] = ['type' => 'item', 'label' => '• Días Festivos', 'value' => '$' . number_format($result['breakdown']['holiday_pay'], 2)];
+        }
+        
+        if (($result['breakdown']['day_31_pay'] ?? 0) > 0) {
+            $costsData[] = ['type' => 'item', 'label' => '• Día 31', 'value' => '$' . number_format($result['breakdown']['day_31_pay'], 2)];
+        }
+        
+        // PRESTACIONES
+        $costsData[] = ['type' => 'category', 'label' => 'PRESTACIONES', 'value' => '$' . number_format($result['total_benefits'], 2)];
+        $costsData[] = ['type' => 'item', 'label' => '• Vacaciones', 'value' => '$' . number_format($result['breakdown']['vacations'], 2)];
+        $costsData[] = ['type' => 'item', 'label' => '• Prima Vacacional', 'value' => '$' . number_format($result['breakdown']['vacation_premium'], 2)];
+        $costsData[] = ['type' => 'item', 'label' => '• Aguinaldo', 'value' => '$' . number_format($result['breakdown']['christmas_bonus'], 2)];
+        $costsData[] = ['type' => 'item', 'label' => '• Prima de Antigüedad', 'value' => '$' . number_format($result['breakdown']['seniority_pay'], 2)];
+        
+        // CARGA SOCIAL
+        $costsData[] = ['type' => 'category', 'label' => 'CARGA SOCIAL (IMSS)', 'value' => '$' . number_format($result['total_social_charge'], 2)];
+        
+        // IMPUESTOS
+        $costsData[] = ['type' => 'category', 'label' => 'IMPUESTO ESTATAL (ISR)', 'value' => '$' . number_format($result['state_tax'], 2)];
+        
+        // GASTOS ADMINISTRATIVOS
+        $costsData[] = ['type' => 'category', 'label' => 'GASTOS ADMINISTRATIVOS (10%)', 'value' => '$' . number_format($result['breakdown']['admin_expenses'], 2)];
+        
+        // TOTAL
+        $costsData[] = ['type' => 'total', 'label' => 'COSTO TOTAL POR GUARDIA', 'value' => '$' . number_format($result['total_cost_per_guard'], 2)];
+        
+        $pdf->addCostBreakdownTable($costsData);
+        
+        // ============================================================
+        // UNIFORMES
+        // ============================================================
+        if (!empty($result['uniforms_details'])) {
+            $pdf->addSectionTitle('UNIFORMES INCLUIDOS EN LA COTIZACIÓN');
+            
+            $uniformsData = [];
+            foreach ($result['uniforms_details'] as $uniform) {
+                $uniformsData[] = [
+                    'type' => $uniform['uniform_type'] ?? 'N/A',
+                    'size' => $uniform['size'] ?? 'N/A',
+                    'color' => $uniform['color'] ?? 'N/A',
+                    'quantity' => $uniform['quantity'],
+                    'unit_price' => $uniform['max_unit_price'],
+                    'subtotal' => $uniform['subtotal'],
+                ];
+            }
+            
+            $pdf->addUniformsTable($uniformsData);
+            
+            // Total de uniformes
+            $pdf->SetFont('helvetica', 'B', 10);
+            $pdf->SetFillColor(232, 244, 253);
+            $pdf->Cell(120, 7, 'Costo Mensual de Uniformes:', 1, 0, 'R', true);
+            $pdf->Cell(55, 7, '$' . number_format($result['uniform_cost'], 2), 1, 1, 'R', true);
+            $pdf->Ln(3);
+        }
+        
+        // ============================================================
+        // RESUMEN FINANCIERO
+        // ============================================================
+        $pdf->addSectionTitle('RESUMEN FINANCIERO');
+        $pdf->addInfoTable([
+            ['label' => 'Subtotal (Costo + Uniformes):', 'value' => '$' . number_format($result['sale_cost_without_financing'], 2)],
+            ['label' => 'Financiamiento (TIIE 15%):', 'value' => '$' . number_format($result['financing'], 2)],
+            ['label' => 'Costo de Venta Total:', 'value' => '$' . number_format($result['sale_cost_without_financing'] + $result['financing'], 2)],
+            ['label' => 'Utilidad (15%):', 'value' => '$' . number_format($result['utility'], 2)],
+        ]);
+        
+        // ============================================================
+        // TOTAL FINAL DESTACADO
+        // ============================================================
+        $pdf->addFinalTotal('PRECIO DE VENTA FINAL', $result['sale_price']);
+        
+        // ============================================================
+        // FORMA DE PAGO Y DATOS BANCARIOS
+        // ============================================================
+        $pdf->addSectionTitle('FORMA DE PAGO');
+        $pdf->addObservations('[DETALLE DE LAS FORMAS DE PAGO]');
+        
+        $pdf->addSectionTitle('DATOS BANCARIOS');
+        $pdf->addInfoTable([
+            ['label' => 'Banco:', 'value' => '[NOMBRE DEL BANCO]'],
+            ['label' => 'Tipo de Cuenta:', 'value' => '[TIPO DE CUENTA]'],
+            ['label' => 'Número de Cuenta:', 'value' => '[NÚMERO DE CUENTA]'],
+        ]);
+        
+        // ============================================================
+        // OBSERVACIONES FINALES
+        // ============================================================
+        $pdf->addSectionTitle('OBSERVACIONES');
+        $observationsText = "• Esta cotización tiene una validez de 30 días naturales.\n";
+        $observationsText .= "• Los precios están sujetos a cambios sin previo aviso.\n";
+        $observationsText .= "• Las condiciones se acordarán por separado.";
+        $pdf->addObservations($observationsText);
+        
+        // ============================================================
+        // SALIDA DEL PDF
+        // ============================================================
+        $filename = 'Cotizacion_' . ($result['folio'] ?? 'N-A') . '.pdf';
+
+// ✅ Generar el PDF como string
+$pdfContent = $pdf->Output($filename, 'S'); // 'S' = string
+
+// ✅ Devolver como respuesta HTTP de Laravel
+return response($pdfContent, 200, [
+    'Content-Type' => 'application/pdf',
+    'Content-Disposition' => 'inline; filename="' . $filename . '"',
+    'Content-Length' => strlen($pdfContent),
+    'Cache-Control' => 'private, max-age=0, must-revalidate',
+    'Pragma' => 'public',
+]);
+        
+    } catch (\Exception $e) {
+        \Log::error('Error generando PDF:', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+        
+        return response()->json([
+            'message' => 'Error al generar PDF',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 }

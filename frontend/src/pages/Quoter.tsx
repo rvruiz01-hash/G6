@@ -6,7 +6,7 @@ import api from "../../services/api";
 // ========== INTERFACES ==========
 interface BusinessLine {
   id: number;
-  description: string;
+  name: string;
 }
 
 interface ShiftType {
@@ -493,7 +493,7 @@ export default function Quoter() {
               <option value="">Seleccionar...</option>
               {businessLines.map((bl) => (
                 <option key={bl.id} value={bl.id}>
-                  {bl.description}
+                  {bl.name}
                 </option>
               ))}
             </select>

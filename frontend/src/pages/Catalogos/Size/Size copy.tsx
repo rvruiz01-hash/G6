@@ -1,75 +1,48 @@
-// src/pages/Catalogos/TypesUniforms.tsx
+// src/pages/Catalogos/Size.tsx
 import React, { useEffect, useState } from "react";
 import api from "../../../services/api";
 import * as XLSX from "xlsx";
 import Button from "../../components/ui/button/Button";
 import { useToast } from "../../components/Toast";
-import {
-  Table,
-  Badge,
-  StatusBadge,
-  ActionButtons,
-} from "../../components/Table1";
+import { Table, Badge, StatusBadge } from "../../components/Table1";
+
+interface Sexe {
+  id: number;
+  name: string;
+}
 
 interface BodyPart {
   id: number;
   description: string;
 }
 
-interface BusinessLine {
+interface Size {
   id: number;
   description: string;
-}
-
-interface Sex {
-  id: number;
-  name: string;
-}
-
-interface Color {
-  id: number;
-  description: string;
-}
-
-interface UniformType {
-  id: number;
-  description: string;
-  body_part_id: number;
-  business_line_id: number;
   sexe_id: number;
-  color_id: number;
+  body_part_id: number;
   status: boolean;
+  sexe?: Sexe;
   body_part?: BodyPart;
-  business_line?: BusinessLine;
-  sexe?: Sex;
-  color?: Color;
 }
 
 interface ValidationErrors {
   description?: string[];
-  body_part_id?: string[];
-  business_line_id?: string[];
   sexe_id?: string[];
-  color_id?: string[];
+  body_part_id?: string[];
   status?: string[];
 }
 
-export default function TiposDeUniformes() {
-  const [uniformTypes, setUniformTypes] = useState<UniformType[]>([]);
+export default function Tallas() {
+  const [sizes, setSizes] = useState<Size[]>([]);
+  const [sexes, setSexes] = useState<Sexe[]>([]);
   const [bodyParts, setBodyParts] = useState<BodyPart[]>([]);
-  const [businessLines, setBusinessLines] = useState<BusinessLine[]>([]);
-  const [sexes, setSexes] = useState<Sex[]>([]);
-  const [colors, setColors] = useState<Color[]>([]);
-
-  const [form, setForm] = useState<Omit<UniformType, "id">>({
+  const [form, setForm] = useState<Omit<Size, "id">>({
     description: "",
-    body_part_id: 0,
-    business_line_id: 0,
     sexe_id: 0,
-    color_id: 0,
+    body_part_id: 0,
     status: true,
   });
-
   const [errors, setErrors] = useState<ValidationErrors>(
     {} as ValidationErrors
   );
@@ -77,46 +50,25 @@ export default function TiposDeUniformes() {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  // ✅ Hook para las notificaciones
   const { showToast, ToastComponent } = useToast();
 
   useEffect(() => {
-    fetchUniformTypes();
-    fetchBodyParts();
-    fetchBusinessLines();
+    fetchSizes();
     fetchSexes();
-    fetchColors();
+    fetchBodyParts();
   }, []);
 
-  const fetchUniformTypes = async () => {
+  const fetchSizes = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/uniform-types");
-      setUniformTypes(response.data);
+      const response = await api.get("/sizes");
+      setSizes(response.data);
     } catch (error) {
-      console.error("Error al obtener los tipos de uniformes", error);
-      showToast("Error al cargar los tipos de uniformes", "error");
+      console.error("Error al obtener las tallas", error);
+      showToast("Error al cargar las tallas", "error");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchBodyParts = async () => {
-    try {
-      const response = await api.get("/body-parts");
-      setBodyParts(response.data);
-    } catch (error) {
-      console.error("Error al obtener las partes corporales", error);
-      showToast("Error al cargar las partes corporales", "error");
-    }
-  };
-
-  const fetchBusinessLines = async () => {
-    try {
-      const response = await api.get("/business-lines");
-      setBusinessLines(response.data);
-    } catch (error) {
-      console.error("Error al obtener las líneas de negocio", error);
-      showToast("Error al cargar las líneas de negocio", "error");
     }
   };
 
@@ -130,13 +82,13 @@ export default function TiposDeUniformes() {
     }
   };
 
-  const fetchColors = async () => {
+  const fetchBodyParts = async () => {
     try {
-      const response = await api.get("/colors");
-      setColors(response.data);
+      const response = await api.get("/body-parts");
+      setBodyParts(response.data);
     } catch (error) {
-      console.error("Error al obtener los colores", error);
-      showToast("Error al cargar los colores", "error");
+      console.error("Error al obtener las partes corporales", error);
+      showToast("Error al cargar las partes corporales", "error");
     }
   };
 
@@ -153,10 +105,7 @@ export default function TiposDeUniformes() {
           ? checked
           : name === "description"
           ? value.toUpperCase()
-          : name === "body_part_id" ||
-            name === "business_line_id" ||
-            name === "sexe_id" ||
-            name === "color_id"
+          : name === "sexe_id" || name === "body_part_id"
           ? parseInt(value)
           : value,
     });
@@ -169,31 +118,46 @@ export default function TiposDeUniformes() {
 
     try {
       if (editingId) {
-        const response = await api.put(`/uniform-types/${editingId}`, form);
-        setUniformTypes(
-          uniformTypes.map((type) =>
-            type.id === editingId ? response.data : type
-          )
+        const response = await api.put(`/sizes/${editingId}`, form);
+        setSizes(
+          sizes.map((size) => (size.id === editingId ? response.data : size))
         );
         setEditingId(null);
-        showToast("Tipo de uniforme actualizado exitosamente", "success");
+        showToast("Talla actualizada exitosamente", "success");
       } else {
-        const response = await api.post("/uniform-types", form);
-        setUniformTypes([...uniformTypes, response.data]);
-        showToast("Tipo de uniforme agregado exitosamente", "success");
+        const response = await api.post("/sizes", form);
+
+        // ✅ Verificar si se crearon dos registros (AMBOS)
+        if (
+          response.data.data &&
+          response.data.data.femenino &&
+          response.data.data.masculino
+        ) {
+          setSizes([
+            ...sizes,
+            response.data.data.femenino,
+            response.data.data.masculino,
+          ]);
+          showToast(
+            "Tallas creadas para FEMENINO y MASCULINO exitosamente",
+            "success"
+          );
+        } else {
+          setSizes([...sizes, response.data]);
+          showToast("Talla agregada exitosamente", "success");
+        }
       }
 
       setForm({
         description: "",
-        body_part_id: 0,
-        business_line_id: 0,
         sexe_id: 0,
-        color_id: 0,
+        body_part_id: 0,
         status: true,
       });
 
-      await fetchUniformTypes();
+      await fetchSizes();
     } catch (error: any) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
       if (error.response?.status === 422) {
         setErrors(error.response.data.errors || {});
         showToast(
@@ -201,10 +165,9 @@ export default function TiposDeUniformes() {
           "error"
         );
       } else {
-        console.error("Error al guardar el tipo de uniforme", error);
+        console.error("Error al guardar la talla", error);
         showToast(
-          error.response?.data?.message ||
-            "Error al guardar el tipo de uniforme",
+          error.response?.data?.message || "Error al guardar la talla",
           "error"
         );
       }
@@ -213,47 +176,11 @@ export default function TiposDeUniformes() {
     }
   };
 
-  const handleEdit = (uniformType: UniformType) => {
-    setForm({
-      description: uniformType.description,
-      body_part_id: uniformType.body_part_id,
-      business_line_id: uniformType.business_line_id,
-      sexe_id: uniformType.sexe_id,
-      color_id: uniformType.color_id,
-      status: uniformType.status,
-    });
-    setEditingId(uniformType.id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleDelete = async (uniformType: UniformType) => {
-    const confirmDelete = window.confirm(
-      `¿Estás seguro de eliminar "${uniformType.description}"?\n\nEsta acción no se puede deshacer.`
-    );
-
-    if (!confirmDelete) return;
-
-    try {
-      await api.delete(`/uniform-types/${uniformType.id}`);
-      setUniformTypes(uniformTypes.filter((t) => t.id !== uniformType.id));
-      showToast("Tipo de uniforme eliminado exitosamente", "success");
-    } catch (error: any) {
-      console.error("Error al eliminar el tipo de uniforme", error);
-      showToast(
-        error.response?.data?.message ||
-          "Error al eliminar el tipo de uniforme",
-        "error"
-      );
-    }
-  };
-
   const handleCancelEdit = () => {
     setForm({
       description: "",
-      body_part_id: 0,
-      business_line_id: 0,
       sexe_id: 0,
-      color_id: 0,
+      body_part_id: 0,
       status: true,
     });
     setEditingId(null);
@@ -261,41 +188,27 @@ export default function TiposDeUniformes() {
     showToast("Edición cancelada", "info");
   };
 
-  const filteredUniformTypes = uniformTypes.filter(
-    (uniformType) =>
-      (uniformType.description || "")
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      (uniformType.body_part?.description || "")
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      (uniformType.business_line?.description || "")
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      (uniformType.sexe?.name || "")
-        .toLowerCase()
-        .includes(search.toLowerCase()) || // 👈 SOLUCIÓN CLAVE AQUÍ
-      (uniformType.color?.description || "")
-        .toLowerCase()
-        .includes(search.toLowerCase())
+  const filteredSizes = sizes.filter(
+    (size) =>
+      size.description.toLowerCase().includes(search.toLowerCase()) ||
+      size.sexe?.name.toLowerCase().includes(search.toLowerCase()) ||
+      size.body_part?.description.toLowerCase().includes(search.toLowerCase())
   );
 
   const exportExcel = () => {
     try {
       const ws = XLSX.utils.json_to_sheet(
-        filteredUniformTypes.map((uniformType) => ({
-          ID: uniformType.id,
-          Descripción: uniformType.description,
-          "Parte Corporal": uniformType.body_part?.description || "N/A",
-          "Línea de Negocio": uniformType.business_line?.description || "N/A",
-          Sexo: uniformType.sexe?.name || "N/A",
-          Color: uniformType.color?.description || "N/A",
-          Estatus: uniformType.status ? "Activo" : "Inactivo",
+        filteredSizes.map((size) => ({
+          ID: size.id,
+          Descripción: size.description,
+          Sexo: size.sexe?.name || "N/A",
+          "Parte Corporal": size.body_part?.description || "N/A",
+          Estatus: size.status ? "Activo" : "Inactivo",
         }))
       );
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Tipos de Uniformes");
-      XLSX.writeFile(wb, "tipos_de_uniformes.xlsx");
+      XLSX.utils.book_append_sheet(wb, ws, "Tallas");
+      XLSX.writeFile(wb, "tallas.xlsx");
       showToast("Archivo Excel exportado exitosamente", "success");
     } catch (error) {
       console.error("Error al exportar Excel", error);
@@ -303,43 +216,26 @@ export default function TiposDeUniformes() {
     }
   };
 
+  // ✅ CORRECCIÓN 1: Filtrar sexos - ocultar "AMBOS" cuando estamos editando
+  const availableSexes = editingId
+    ? sexes.filter((sex) => sex.name.toUpperCase() !== "AMBOS")
+    : sexes;
+
   const columns = [
     {
       key: "id",
       header: "ID",
       width: "80px",
       align: "center" as const,
-      render: (row: UniformType) => (
-        <Badge text={`#${row.id}`} variant="primary" />
-      ),
+      render: (row: Size) => <Badge text={`#${row.id}`} variant="primary" />,
     },
     {
       key: "description",
       header: "Descripción",
       align: "center" as const,
-      render: (row: UniformType) => (
+      render: (row: Size) => (
         <span className="font-medium text-gray-900 dark:text-gray-100">
           {row.description}
-        </span>
-      ),
-    },
-    {
-      key: "body_part",
-      header: "Parte Corporal",
-      align: "center" as const,
-      render: (row: UniformType) => (
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          {row.body_part?.description || "N/A"}
-        </span>
-      ),
-    },
-    {
-      key: "business_line",
-      header: "Línea de Negocio",
-      align: "center" as const,
-      render: (row: UniformType) => (
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          {row.business_line?.description || "N/A"}
         </span>
       ),
     },
@@ -347,19 +243,19 @@ export default function TiposDeUniformes() {
       key: "sexe",
       header: "Sexo",
       align: "center" as const,
-      render: (row: UniformType) => (
+      render: (row: Size) => (
         <span className="text-sm text-gray-700 dark:text-gray-300">
           {row.sexe?.name || "N/A"}
         </span>
       ),
     },
     {
-      key: "color",
-      header: "Color",
+      key: "body_part",
+      header: "Parte Corporal",
       align: "center" as const,
-      render: (row: UniformType) => (
+      render: (row: Size) => (
         <span className="text-sm text-gray-700 dark:text-gray-300">
-          {row.color?.description || "N/A"}
+          {row.body_part?.description || "N/A"}
         </span>
       ),
     },
@@ -368,7 +264,7 @@ export default function TiposDeUniformes() {
       header: "Estatus",
       width: "120px",
       align: "center" as const,
-      render: (row: UniformType) => (
+      render: (row: Size) => (
         <StatusBadge
           status={row.status ? "active" : "inactive"}
           text={row.status ? "Activo" : "Inactivo"}
@@ -376,27 +272,16 @@ export default function TiposDeUniformes() {
         />
       ),
     },
-    {
-      key: "actions",
-      header: "Acciones",
-      width: "150px",
-      align: "center" as const,
-      render: (row: UniformType) => (
-        <ActionButtons
-          onEdit={() => handleEdit(row)}
-          onDelete={() => handleDelete(row)}
-        />
-      ),
-    },
   ];
 
   return (
     <div className="p-3 sm:p-4 md:p-6 min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      {/* ✅ CORRECCIÓN 2: Componente de Toast */}
       {ToastComponent}
 
-      <div className="max-w-7xl mx-auto bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg border border-gray-300 dark:border-gray-700">
+      <div className="w-full max-w-5xl mx-auto overflow-x-hidden bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg border border-gray-300 dark:border-gray-700">
         <h1 className="text-2xl sm:text-3xl font-bold text-blue-700 dark:text-yellow-500 mb-4 sm:mb-6">
-          Tipos de Uniformes
+          Tallas
         </h1>
 
         <form onSubmit={handleSubmit} className="mb-6 sm:mb-8 space-y-4">
@@ -421,9 +306,8 @@ export default function TiposDeUniformes() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Descripción */}
-            <div className="md:col-span-2 lg:col-span-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <label className="block text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-1">
                 Descripción: <span className="text-red-500">*</span>
               </label>
@@ -433,7 +317,7 @@ export default function TiposDeUniformes() {
                 value={form.description}
                 onChange={handleChange}
                 className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-400 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
-                placeholder="Ej. CAMISA EJECUTIVA, PANTALÓN OPERATIVO..."
+                placeholder="Ej. S, M, L, XL, 28, 30..."
               />
               {errors.description && (
                 <p className="text-red-500 dark:text-red-400 text-xs sm:text-sm mt-1">
@@ -442,32 +326,6 @@ export default function TiposDeUniformes() {
               )}
             </div>
 
-            {/* Línea de Negocio */}
-            <div>
-              <label className="block text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-1">
-                Línea de Negocio: <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="business_line_id"
-                value={form.business_line_id}
-                onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-400 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
-              >
-                <option value={0}>Seleccione una línea de negocio</option>
-                {businessLines.map((line) => (
-                  <option key={line.id} value={line.id}>
-                    {line.description}
-                  </option>
-                ))}
-              </select>
-              {errors.business_line_id && (
-                <p className="text-red-500 dark:text-red-400 text-xs sm:text-sm mt-1">
-                  {errors.business_line_id.join(", ")}
-                </p>
-              )}
-            </div>
-
-            {/* Sexo */}
             <div>
               <label className="block text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-1">
                 Sexo: <span className="text-red-500">*</span>
@@ -479,9 +337,10 @@ export default function TiposDeUniformes() {
                 className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-400 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
               >
                 <option value={0}>Seleccione un sexo</option>
-                {sexes.map((sex) => (
-                  <option key={sex.id} value={sex.id}>
-                    {sex.name}
+                {/* ✅ CORRECCIÓN 1 APLICADA: usar availableSexes en lugar de sexes */}
+                {availableSexes.map((sexo) => (
+                  <option key={sexo.id} value={sexo.id}>
+                    {sexo.name}
                   </option>
                 ))}
               </select>
@@ -492,7 +351,6 @@ export default function TiposDeUniformes() {
               )}
             </div>
 
-            {/* Parte Corporal */}
             <div>
               <label className="block text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-1">
                 Parte Corporal: <span className="text-red-500">*</span>
@@ -503,7 +361,7 @@ export default function TiposDeUniformes() {
                 onChange={handleChange}
                 className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-400 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
               >
-                <option value={0}>Seleccione una parte corporal</option>
+                <option value={0}>Seleccione una parte corporal </option>
                 {bodyParts.map((part) => (
                   <option key={part.id} value={part.id}>
                     {part.description}
@@ -513,31 +371,6 @@ export default function TiposDeUniformes() {
               {errors.body_part_id && (
                 <p className="text-red-500 dark:text-red-400 text-xs sm:text-sm mt-1">
                   {errors.body_part_id.join(", ")}
-                </p>
-              )}
-            </div>
-
-            {/* Color */}
-            <div>
-              <label className="block text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-1">
-                Color: <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="color_id"
-                value={form.color_id}
-                onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-400 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
-              >
-                <option value={0}>Seleccione un color</option>
-                {colors.map((color) => (
-                  <option key={color.id} value={color.id}>
-                    {color.description}
-                  </option>
-                ))}
-              </select>
-              {errors.color_id && (
-                <p className="text-red-500 dark:text-red-400 text-xs sm:text-sm mt-1">
-                  {errors.color_id.join(", ")}
                 </p>
               )}
             </div>
@@ -574,12 +407,11 @@ export default function TiposDeUniformes() {
           </div>
         </form>
 
-        {/* Barra de búsqueda y exportar */}
         <div className="mb-4 space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
-              placeholder="Buscar por descripción, parte corporal, línea de negocio, sexo o color..."
+              placeholder="Buscar por descripción, sexo o parte corporal..."
               className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-400 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -595,19 +427,18 @@ export default function TiposDeUniformes() {
           </div>
 
           <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            Mostrando {filteredUniformTypes.length} de {uniformTypes.length}{" "}
-            {filteredUniformTypes.length === 1 ? "registro" : "registros"}
+            Mostrando {filteredSizes.length} de {sizes.length}{" "}
+            {filteredSizes.length === 1 ? "registro" : "registros"}
           </div>
         </div>
 
-        {/* Tabla */}
         <Table
-          data={filteredUniformTypes}
+          data={filteredSizes}
           columns={columns}
           keyExtractor={(row) => row.id}
           loading={loading}
-          emptyMessage="No hay tipos de uniformes registrados"
-          mobileBreakpoint="lg"
+          emptyMessage="No hay tallas registradas"
+          mobileBreakpoint="md"
           mobileCardRender={(row) => (
             <div className="space-y-3">
               <div className="flex justify-between items-start">
@@ -622,29 +453,17 @@ export default function TiposDeUniformes() {
                 <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
                   {row.description}
                 </p>
-                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <p>
-                    <span className="font-medium">Parte Corporal:</span>{" "}
-                    {row.body_part?.description || "N/A"}
-                  </p>
-                  <p>
-                    <span className="font-medium">Línea de Negocio:</span>{" "}
-                    {row.business_line?.description || "N/A"}
-                  </p>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   <p>
                     <span className="font-medium">Sexo:</span>{" "}
                     {row.sexe?.name || "N/A"}
                   </p>
                   <p>
-                    <span className="font-medium">Color:</span>{" "}
-                    {row.color?.description || "N/A"}
+                    <span className="font-medium">Parte Corporal:</span>{" "}
+                    {row.body_part?.description || "N/A"}
                   </p>
                 </div>
               </div>
-              <ActionButtons
-                onEdit={() => handleEdit(row)}
-                onDelete={() => handleDelete(row)}
-              />
             </div>
           )}
         />

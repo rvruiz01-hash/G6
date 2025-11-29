@@ -7,10 +7,10 @@ import Home from "./pages/Dashboard/Home";
 import RegistroAsistencia from "./pages/RegistroAsistencia";
 import Plantillas from "./pages/Plantillas/PlantillaSemanal";
 import LineaDeNegocio from "./pages/Catalogos/BusinessLines";
-import PartesCorporales from "./pages/Catalogos/BodyPart";
-import Colores from "./pages/Catalogos/Color";
-import Tallas from "./pages/Catalogos/Size";
-import TiposUniformes from "./pages/Catalogos/TypesUniforms";
+import PartesCorporales from "./pages/Catalogos/BodyParts/BodyPart";
+import Colores from "./pages/Catalogos/Color/Color";
+import Tallas from "./pages/Catalogos/Size/Size";
+import TiposUniformes from "./pages/Catalogos/TypeUniform/TypesUniforms";
 import Bancos from "./pages/Catalogos/Bank";
 import Proveedor from "./pages/Supplier";
 import Sucursales from "./pages/Catalogos/branch";
@@ -20,6 +20,7 @@ import OrganizationalChart from "./pages/OrganizationalChart/OrganizationalChart
 import Departments from "./pages/Catalogos/Departments/Departments";
 import Positions from "./pages/Catalogos/Positions/Positions";
 import DepartmentsAndPositions from "./pages/Catalogos/OrganizationalStructure/DepartmentsAndPositions";
+import UniformParameters from "./pages/Catalogos/UniformParameters/UniformParameters";
 
 export default function AppRoutes() {
   const { modules } = useModules();
@@ -47,7 +48,10 @@ export default function AppRoutes() {
       />
       <Route path="/catalogos/departamentos" element={<Departments />} />
       <Route path="/catalogos/posiciones" element={<Positions />} />
-
+      <Route
+        path="/Parametros_Uniformes"
+        element={<UniformParameters />}
+      />
       {/* Rutas dinámicas desde la API */}
       {modules.flatMap((module) => {
         const routes = [];

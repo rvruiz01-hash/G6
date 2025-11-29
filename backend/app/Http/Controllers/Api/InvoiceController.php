@@ -24,7 +24,7 @@ class InvoiceController extends Controller
         try {
             $invoices = Invoice::with([
                 'supplier:id,legal_name,rfc',
-                'businessLine:id,description',
+                'businessLine:id,name',
                 'federalEntity:id,name',
                 'branch:id,name,code',
                 'uniformStock.uniformType:id,description',
@@ -93,8 +93,8 @@ class InvoiceController extends Controller
                 'folio.max' => 'El folio no puede exceder 20 caracteres',
                 'supplier_id.required' => 'El proveedor es obligatorio',
                 'supplier_id.exists' => 'El proveedor seleccionado no existe',
-                'business_line_id.required' => 'La línea de negocio es obligatoria',
-                'business_line_id.exists' => 'La línea de negocio seleccionada no existe',
+                'business_line_id.required' => 'El segmento de negocio es obligatoria',
+                'business_line_id.exists' => 'El segmento de negocio seleccionada no existe',
                 'payment_type.required' => 'El tipo de pago es obligatorio',
                 'payment_type.in' => 'El tipo de pago debe ser CONTADO o CREDITO',
                 'payment_months.min' => 'Los meses de crédito deben ser al menos 1',
@@ -223,7 +223,7 @@ class InvoiceController extends Controller
                 // Cargar las relaciones para la respuesta
                 $invoice->load([
                     'supplier:id,legal_name,rfc',
-                    'businessLine:id,description',
+                    'businessLine:id,name',
                     'federalEntity:id,name',
                     'branch:id,name,code',
                     'uniformStock.uniformType:id,description',
@@ -276,7 +276,7 @@ class InvoiceController extends Controller
         try {
             $invoice = Invoice::with([
                 'supplier:id,legal_name,rfc,email,phone',
-                'businessLine:id,description',
+                'businessLine:id,name',
                 'federalEntity:id,name',
                 'branch:id,name,code,address,phone',
                 'uniformStock.uniformType:id,description',
@@ -394,7 +394,7 @@ class InvoiceController extends Controller
             
             $invoice->load([
                 'supplier:id,legal_name,rfc',
-                'businessLine:id,description',
+                'businessLine:id,name',
                 'federalEntity:id,name',
                 'branch:id,name,code',
             ]);
