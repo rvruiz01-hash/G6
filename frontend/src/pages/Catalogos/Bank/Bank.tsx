@@ -1,15 +1,21 @@
 // src/pages/Catalogos/Bank.tsx
 import React, { useEffect, useState } from "react";
-import api from "../../../services/api";
+import api from "../../../../services/api";
 import * as XLSX from "xlsx";
-import Button from "../../components/ui/button/Button";
-import { useToast } from "../../components/Toast";
+import Button from "../../../components/ui/button/Button";
+import { useToast } from "../../../components/Toast";
+// 🎯 Importar Driver.js
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
+import "../../../styles/driver-custom.css"; // Tu CSS personalizado
+import { getBankDriverSteps } from "./bankDriverSteps";
 import {
   Table,
   Badge,
   StatusBadge,
   ActionButtons,
-} from "../../components/Table1";
+} from "../../../components/Table1";
+// import { AlignCenter } from "lucide-react";
 
 interface Bank {
   id: number;
@@ -39,6 +45,27 @@ export default function Bancos() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const { showToast, ToastComponent } = useToast();
+
+  // 🎯 TOUR GUIADO
+  useEffect(() => {
+    // Verificar si el usuario ya vio el tour
+    const hasSeenTour =
+      localStorage.getItem("tour_bank_completed") === "true";
+
+    if (!hasSeenTour) {
+      const timer = setTimeout(() => {
+        startTour();
+      }, 1500); // Esperar 1.5 segundos para que cargue el contenido
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const startTour = () => {
+    const tour = getBankDriverSteps();
+    tour.drive();
+  };
+
 
   useEffect(() => {
     fetchBanks();
@@ -160,12 +187,18 @@ export default function Bancos() {
       header: "ID",
       width: "80px",
       align: "center" as const,
+      sortable: true,
+      filterable: true,
+      filterType: "number" as const,
       render: (row: Bank) => <Badge text={`#${row.id}`} variant="primary" />,
     },
     {
       key: "name",
       header: "Nombre",
       align: "center" as const,
+      sortable: true,
+      filterable: true,
+      filterType: "text" as const,
       render: (row: Bank) => (
         <span className="font-medium text-gray-900 dark:text-gray-100">
           {row.name}
@@ -177,6 +210,9 @@ export default function Bancos() {
       header: "Código",
       width: "120px",
       align: "center" as const,
+      sortable: true,
+      filterable: true,
+      filterType: "number" as const,
       render: (row: Bank) => (
         <span className="font-mono text-sm text-gray-700 dark:text-gray-300">
           {row.code}
@@ -188,6 +224,9 @@ export default function Bancos() {
       header: "Estatus",
       width: "120px",
       align: "center" as const,
+      sortable: true,
+      filterable: true,
+      filterType: "boolean" as const,
       render: (row: Bank) => (
         <StatusBadge
           status={row.status ? "active" : "inactive"}
@@ -206,13 +245,38 @@ export default function Bancos() {
   ];
 
   return (
+    
     <div className="p-3 sm:p-4 md:p-6 min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {ToastComponent}
 
       <div className="w-full max-w-5xl mx-auto overflow-x-hidden bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg border border-gray-300 dark:border-gray-700">
+        <div data-tour="bodyForm">
+          <div className="flex justify-between items-center mb-4 sm:mb-6"> 
         <h1 className="text-2xl sm:text-3xl font-bold text-blue-700 dark:text-yellow-500 mb-4 sm:mb-6">
-          Bancos
+          BANCOS
         </h1>
+        
+        <button
+            onClick={startTour}
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+            title="Ver tutorial"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="hidden sm:inline">Tutorial</span>
+          </button>
+        </div>
 
         <form onSubmit={handleSubmit} className="mb-6 sm:mb-8 space-y-4">
           {editingId && (
@@ -236,8 +300,8 @@ export default function Bancos() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+          <div data-tour="bank_form" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div data-tour="bank_name" >
               <label className="block text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-1">
                 Nombre del Banco:
               </label>
@@ -256,7 +320,7 @@ export default function Bancos() {
               )}
             </div>
 
-            <div>
+            <div data-tour="bank_code">
               <label className="block text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-1">
                 Código (3 dígitos):
               </label>
@@ -277,7 +341,7 @@ export default function Bancos() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div data-tour="bank_status" className="flex items-center space-x-2">
             <input
               type="checkbox"
               name="status"
@@ -290,14 +354,17 @@ export default function Bancos() {
             </label>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Button
-              onClick={handleSubmit}
-              theme={editingId ? "update" : "add"}
-              text={editingId ? "Actualizar" : "Agregar"}
-              loading={loading}
-              loadingText={editingId ? "Actualizando..." : "Agregando..."}
-            />
+          <div  className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div data-tour="bank_button_add">
+              <Button
+                onClick={handleSubmit}
+                theme={editingId ? "update" : "add"}
+                text={editingId ? "Actualizar" : "Agregar"}
+                loading={loading}
+                loadingText={editingId ? "Actualizando..." : "Agregando..."}
+              />
+            </div>
+            <div data-tour="bank_button_cancel">
             {editingId && (
               <Button
                 onClick={handleCancelEdit}
@@ -305,34 +372,24 @@ export default function Bancos() {
                 text="Cancelar"
               />
             )}
-          </div>
-        </form>
-
-        <div className="mb-4 space-y-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              placeholder="Buscar por nombre o código..."
-              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-400 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <div className="flex gap-2 sm:gap-3">
+            </div>
+            <div data-tour="bank_button_dowload">
               <Button
                 onClick={exportExcel}
                 theme="download"
-                text="Excel"
-                size="clamp(0.75rem, 2vw, 0.85rem)"
+                text="Descargar Excel"
               />
             </div>
           </div>
+        </form>
 
+        <div data-tour="bank_registers" className="mb-4 space-y-3">
           <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             Mostrando {filteredBanks.length} de {banks.length}{" "}
             {filteredBanks.length === 1 ? "registro" : "registros"}
           </div>
         </div>
-      <div className="overflow-x-auto">
+      <div data-tour="bank_table" className="overflow-x-auto">
         <Table
           data={filteredBanks}
           columns={columns}
@@ -341,7 +398,7 @@ export default function Bancos() {
           emptyMessage="No hay bancos registrados"
           mobileBreakpoint="md"
           mobileCardRender={(row) => (
-            <div className="space-y-3">
+            <div className="space-y-3" >
               <div className="flex justify-between items-start">
                 <Badge text={`#${row.id}`} variant="primary" />
                 <StatusBadge
@@ -366,5 +423,7 @@ export default function Bancos() {
         </div>
       </div>
     </div>
+    </div>
+
   );
 }

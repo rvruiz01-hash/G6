@@ -1,5 +1,5 @@
-// src/components/Table.tsx
-import React from "react";
+// src/components/Table1.tsx
+import React, { useState, useMemo } from "react";
 
 // 🎯 Tipos para las columnas
 export interface Column<T> {
@@ -9,9 +9,12 @@ export interface Column<T> {
   align?: "left" | "center" | "right";
   render?: (row: T, index: number) => React.ReactNode;
   sortable?: boolean;
+  filterable?: boolean;
   className?: string;
-  // ✅ NUEVO: Ocultar columna en móvil
   hideOnMobile?: boolean;
+  filterType?: "text" | "number" | "select" | "date" | "range" | "boolean";
+  filterOptions?: { value: string; label: string }[];
+  valueGetter?: (row: T) => any; // Función para obtener el valor de la celda
 }
 
 // 🎯 Props del componente
@@ -23,10 +26,14 @@ interface TableProps<T> {
   emptyMessage?: string;
   loading?: boolean;
   className?: string;
-  // ✅ NUEVO: Renderizado personalizado para móvil
   mobileCardRender?: (row: T, index: number) => React.ReactNode;
-  // ✅ NUEVO: Breakpoint para cambiar a móvil (default: md)
   mobileBreakpoint?: "sm" | "md" | "lg";
+  // Nuevas props para funcionalidades avanzadas
+  enablePagination?: boolean;
+  pageSize?: number;
+  pageSizeOptions?: number[];
+  enableGlobalSearch?: boolean;
+  globalSearchPlaceholder?: string;
 }
 
 // 🎨 Componente principal
@@ -40,7 +47,29 @@ export function Table<T>({
   className = "",
   mobileCardRender,
   mobileBreakpoint = "md",
+  enablePagination = true,
+  pageSize: initialPageSize = 20,
+  pageSizeOptions = [10, 20, 50, 100],
+  enableGlobalSearch = true,
+  globalSearchPlaceholder = "Buscar...",
 }: TableProps<T>) {
+  // Estados para funcionalidades avanzadas
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  } | null>(null);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [columnOrder, setColumnOrder] = useState<string[]>(columns.map(col => col.key));
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
+
+  // Actualizar orden de columnas cuando cambien
+  React.useEffect(() => {
+    setColumnOrder(columns.map(col => col.key));
+  }, [columns]);
+
   // Clases para breakpoints
   const desktopClass = {
     sm: "hidden sm:block",
@@ -54,53 +83,182 @@ export function Table<T>({
     lg: "lg:hidden",
   }[mobileBreakpoint];
 
+  // 🔹 Función de ordenamiento
+  const handleSort = (columnKey: string) => {
+    const column = columns.find((col) => col.key === columnKey);
+    if (!column?.sortable) return;
+
+    setSortConfig((current) => {
+      if (current?.key === columnKey) {
+        return current.direction === "asc"
+          ? { key: columnKey, direction: "desc" }
+          : null;
+      }
+      return { key: columnKey, direction: "asc" };
+    });
+  };
+
+  // 🔹 Función para cambiar filtro de columna
+  const handleColumnFilter = (columnKey: string, value: string) => {
+    setColumnFilters((prev) => ({
+      ...prev,
+      [columnKey]: value,
+    }));
+    setCurrentPage(1); // Reset a primera página al filtrar
+  };
+
+  // 🔹 Funciones para drag and drop de columnas
+  const handleDragStart = (columnKey: string) => {
+    setDraggedColumn(columnKey);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (targetColumnKey: string) => {
+    if (!draggedColumn || draggedColumn === targetColumnKey) return;
+
+    const newOrder = [...columnOrder];
+    const draggedIndex = newOrder.indexOf(draggedColumn);
+    const targetIndex = newOrder.indexOf(targetColumnKey);
+
+    // Mover la columna arrastrada a la nueva posición
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, draggedColumn);
+
+    setColumnOrder(newOrder);
+    setDraggedColumn(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedColumn(null);
+  };
+
+  // Obtener columnas ordenadas
+  const orderedColumns = useMemo(() => {
+    return columnOrder
+      .map(key => columns.find(col => col.key === key))
+      .filter((col): col is Column<T> => col !== undefined);
+  }, [columnOrder, columns]);
+
+  // 🔹 Función para obtener el valor de una columna (soporte para objetos anidados)
+  const getColumnValue = (row: T, column: Column<T>) => {
+    // Si hay valueGetter personalizado, usarlo
+    if (column.valueGetter) {
+      return column.valueGetter(row);
+    }
+    
+    // Soporte para notación de punto (ej: "department.name")
+    const keys = column.key.split('.');
+    let value: any = row;
+    
+    for (const key of keys) {
+      if (value && typeof value === 'object') {
+        value = value[key];
+      } else {
+        break;
+      }
+    }
+    
+    return value;
+  };
+
+  // 🔹 Datos procesados (filtrados, ordenados, paginados)
+  const processedData = useMemo(() => {
+    let filtered = [...data];
+
+    // Aplicar búsqueda global
+    if (globalSearch) {
+      filtered = filtered.filter((row) =>
+        columns.some((col) => {
+          const value = getColumnValue(row, col);
+          return String(value).toLowerCase().includes(globalSearch.toLowerCase());
+        })
+      );
+    }
+
+    // Aplicar filtros de columna
+    Object.entries(columnFilters).forEach(([key, filterValue]) => {
+      if (filterValue) {
+        filtered = filtered.filter((row) => {
+          const column = columns.find(col => col.key === key);
+          if (!column) return true;
+          
+          const value = getColumnValue(row, column);
+          return String(value).toLowerCase().includes(filterValue.toLowerCase());
+        });
+      }
+    });
+
+    // Aplicar ordenamiento
+    if (sortConfig) {
+      filtered.sort((a, b) => {
+        const column = columns.find(col => col.key === sortConfig.key);
+        if (!column) return 0;
+        
+        const aValue = getColumnValue(a, column);
+        const bValue = getColumnValue(b, column);
+
+        if (aValue === bValue) return 0;
+
+        const comparison = aValue > bValue ? 1 : -1;
+        return sortConfig.direction === "asc" ? comparison : -comparison;
+      });
+    }
+
+    return filtered;
+  }, [data, globalSearch, columnFilters, sortConfig, columns]);
+
+  // 🔹 Paginación
+  const paginatedData = useMemo(() => {
+    if (!enablePagination) return processedData;
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return processedData.slice(startIndex, endIndex);
+  }, [processedData, currentPage, pageSize, enablePagination]);
+
+  const totalPages = Math.ceil(processedData.length / pageSize);
+
+  // 🔹 Cambiar página
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  // 🔹 Cambiar tamaño de página
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
+
   return (
     <>
       <style>{`
-        /* ✨ TABLA FUTURISTA */
+        /* ✨ TABLA FUTURISTA - CON SOPORTE TEMA CLARO */
         .futuristic-table {
           position: relative;
           border-collapse: separate;
           border-spacing: 0;
           border-radius: 12px;
           overflow: hidden;
-          background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.05) 0%,
-            rgba(255, 255, 255, 0.02) 100%
-          );
+          background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(10px);
-          box-shadow: 
-            0 8px 32px 0 rgba(31, 38, 135, 0.15),
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .dark .futuristic-table {
-          background: linear-gradient(
-            135deg,
-            rgba(30, 41, 59, 0.8) 0%,
-            rgba(15, 23, 42, 0.9) 100%
-          );
-          box-shadow: 
-            0 8px 32px 0 rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+          background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
         }
 
         .futuristic-table thead {
           position: relative;
-          background: linear-gradient(
-            90deg,
-            rgba(212, 175, 55, 0.15) 0%,
-            rgba(212, 175, 55, 0.15) 100%
-          );
+          background: linear-gradient(90deg, rgba(212, 175, 55, 0.12) 0%, rgba(251, 191, 36, 0.12) 100%);
         }
 
         .dark .futuristic-table thead {
-          background: linear-gradient(
-            90deg,
-            rgba(212, 175, 55, 0.2) 0%,
-            rgba(59, 130, 246, 0.2) 100%
-          );
+          background: linear-gradient(90deg, rgba(212, 175, 55, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
         }
 
         .futuristic-table thead th {
@@ -110,15 +268,102 @@ export function Table<T>({
           font-size: 0.875rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
-          color: rgb(212, 175, 55);
+          color: rgb(180, 83, 9);
           position: relative;
-          border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+          border-bottom: 2px solid rgba(212, 175, 55, 0.25);
           white-space: nowrap;
+          cursor: move;
+          transition: all 0.2s ease;
         }
 
         .dark .futuristic-table thead th {
           color: rgb(212, 175, 55);
           border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .futuristic-table thead th:hover {
+          background-color: rgba(212, 175, 55, 0.08);
+        }
+
+        .dark .futuristic-table thead th:hover {
+          background-color: rgba(212, 175, 55, 0.1);
+        }
+
+        .futuristic-table thead th.dragging {
+          opacity: 0.5;
+          background-color: rgba(212, 175, 55, 0.15);
+        }
+
+        .dark .futuristic-table thead th.dragging {
+          opacity: 0.5;
+          background-color: rgba(212, 175, 55, 0.2);
+        }
+
+        .sortable-header {
+          cursor: pointer;
+          user-select: none;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .sortable-header:hover {
+          color: rgb(161, 98, 7);
+        }
+
+        .dark .sortable-header:hover {
+          color: rgb(251, 191, 36);
+        }
+
+        .sort-icon {
+          font-size: 0.75rem;
+          opacity: 0.5;
+        }
+
+        .sort-icon.active {
+          opacity: 1;
+          color: rgb(180, 83, 9);
+        }
+
+        .dark .sort-icon.active {
+          opacity: 1;
+          color: rgb(251, 191, 36);
+        }
+
+        .column-filter {
+          margin-top: 0.5rem;
+          width: 100%;
+        }
+
+        .column-filter input,
+        .column-filter select {
+          width: 100%;
+          padding: 0.375rem 0.5rem;
+          font-size: 0.75rem;
+          border-radius: 0.375rem;
+          border: 1px solid rgba(209, 213, 219, 0.8);
+          background-color: white;
+          color: rgb(31, 41, 55);
+          transition: all 0.2s;
+        }
+
+        .dark .column-filter input,
+        .dark .column-filter select {
+          background-color: rgba(17, 24, 39, 0.8);
+          color: rgb(229, 231, 235);
+          border-color: rgba(75, 85, 99, 0.5);
+        }
+
+        .column-filter input:focus,
+        .column-filter select:focus {
+          outline: none;
+          border-color: rgb(212, 175, 55);
+          box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+        }
+
+        .column-filter input::placeholder {
+          color: rgb(107, 114, 128);
+          font-size: 0.7rem;
         }
 
         .futuristic-table thead th::before {
@@ -128,22 +373,8 @@ export function Table<T>({
           left: 0;
           right: 0;
           height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(212, 175, 55, 0.8),
-            transparent
-          );
+          background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.8), transparent);
           animation: shimmer 3s ease-in-out infinite;
-        }
-
-        .dark .futuristic-table thead th::before {
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(212, 175, 55, 0.8),
-            transparent
-          );
         }
 
         @keyframes shimmer {
@@ -154,8 +385,8 @@ export function Table<T>({
         .futuristic-table tbody tr {
           position: relative;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          background: rgba(255, 255, 255, 0.02);
-          border-bottom: 1px solid rgba(156, 163, 175, 0.1);
+          background: rgba(255, 255, 255, 0.6);
+          border-bottom: 1px solid rgba(156, 163, 175, 0.15);
         }
 
         .dark .futuristic-table tbody tr {
@@ -164,26 +395,14 @@ export function Table<T>({
         }
 
         .futuristic-table tbody tr:hover {
-          background: linear-gradient(
-            90deg,
-            rgba(212, 175, 55, 0.08) 0%,
-            rgba(212, 175, 55, 0.08) 100%
-          );
+          background: linear-gradient(90deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.08) 100%);
           transform: translateX(4px);
-          box-shadow: 
-            -4px 0 0 0 rgba(212, 175, 55, 0.5),
-            0 4px 20px 0 rgba(212, 175, 55, 0.1);
+          box-shadow: -4px 0 0 0 rgba(212, 175, 55, 0.4), 0 4px 20px 0 rgba(212, 175, 55, 0.1);
         }
 
         .dark .futuristic-table tbody tr:hover {
-          background: linear-gradient(
-            90deg,
-            rgba(212, 175, 55, 0.1) 0%,
-            rgba(212, 175, 55, 0.1) 100%
-          );
-          box-shadow: 
-            -4px 0 0 0 rgba(212, 175, 55, 0.6),
-            0 4px 20px 0 rgba(212, 175, 55, 0.15);
+          background: linear-gradient(90deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.1) 100%);
+          box-shadow: -4px 0 0 0 rgba(212, 175, 55, 0.6), 0 4px 20px 0 rgba(212, 175, 55, 0.15);
         }
 
         .futuristic-table tbody tr.clickable {
@@ -201,14 +420,126 @@ export function Table<T>({
           color: rgb(209, 213, 219);
         }
 
-        /* ✨ TARJETA MÓVIL */
+        .pagination-container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          background: rgba(243, 244, 246, 0.9);
+          border-top: 2px solid rgba(156, 163, 175, 0.3);
+          border-radius: 0 0 12px 12px;
+          margin-top: -12px;
+        }
+
+        .dark .pagination-container {
+          background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.7) 100%);
+          border-top: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .pagination-info {
+          font-size: 0.875rem;
+          color: rgb(75, 85, 99);
+        }
+
+        .dark .pagination-info {
+          color: rgb(156, 163, 175);
+        }
+
+        .pagination-controls {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .pagination-btn {
+          padding: 0.5rem 0.75rem;
+          border-radius: 0.375rem;
+          border: 1px solid rgba(209, 213, 219, 0.8);
+          background-color: white;
+          color: rgb(55, 65, 81);
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .dark .pagination-btn {
+          border: 1px solid rgba(75, 85, 99, 0.5);
+          background-color: rgba(31, 41, 55, 0.8);
+          color: rgb(229, 231, 235);
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+          background-color: rgba(212, 175, 55, 0.15);
+          border-color: rgb(212, 175, 55);
+        }
+
+        .dark .pagination-btn:hover:not(:disabled) {
+          background-color: rgba(59, 130, 246, 0.2);
+          border-color: rgb(59, 130, 246);
+        }
+
+        .pagination-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+          background-color: rgb(212, 175, 55);
+          color: white;
+          border-color: rgb(212, 175, 55);
+          font-weight: 600;
+        }
+
+        .page-size-selector {
+          padding: 0.5rem;
+          border-radius: 0.375rem;
+          border: 1px solid rgba(209, 213, 219, 0.8);
+          background-color: white;
+          color: rgb(55, 65, 81);
+          font-size: 0.875rem;
+          cursor: pointer;
+        }
+
+        .dark .page-size-selector {
+          border: 1px solid rgba(75, 85, 99, 0.5);
+          background-color: rgba(31, 41, 55, 0.8);
+          color: rgb(229, 231, 235);
+        }
+
+        .global-search {
+          margin-bottom: 1rem;
+        }
+
+        .global-search input {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          font-size: 0.875rem;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(209, 213, 219, 0.8);
+          background-color: white;
+          color: rgb(31, 41, 55);
+          transition: all 0.2s;
+        }
+
+        .dark .global-search input {
+          background-color: rgba(17, 24, 39, 0.8);
+          color: rgb(229, 231, 235);
+          border-color: rgba(75, 85, 99, 0.5);
+        }
+
+        .global-search input:focus {
+          outline: none;
+          border-color: rgb(212, 175, 55);
+          box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+
+        .global-search input::placeholder {
+          color: rgb(107, 114, 128);
+        }
+
         .mobile-card {
           position: relative;
-          background: linear-gradient(
-            to bottom right,
-            rgba(249, 250, 251, 1),
-            rgba(212, 175, 55, 1)
-          );
+          background: linear-gradient(to bottom right, rgba(249, 250, 251, 1), rgba(212, 175, 55, 1));
           border-radius: 0.75rem;
           padding: 1rem;
           border: 1px solid rgba(212, 175, 55, 1);
@@ -218,11 +549,7 @@ export function Table<T>({
         }
 
         .dark .mobile-card {
-          background: linear-gradient(
-            to bottom right,
-            rgba(212, 175, 55, 1),
-            rgba(17, 24, 39, 1)
-          );
+          background: linear-gradient(to bottom right, rgba(212, 175, 55, 1), rgba(17, 24, 39, 1));
           border: 1px solid rgba(212, 175, 55, 1);
         }
 
@@ -244,11 +571,6 @@ export function Table<T>({
           opacity: 0.1;
         }
 
-        .dark .mobile-card::before {
-          background: rgb(212, 175, 55);
-        }
-
-        /* ✨ AVATAR CON NOMBRE */
         .avatar-cell {
           display: flex;
           align-items: center;
@@ -303,7 +625,6 @@ export function Table<T>({
           color: rgb(156, 163, 175);
         }
 
-        /* ✨ BOTONES DE ACCIÓN */
         .action-buttons {
           display: flex;
           gap: 0.5rem;
@@ -362,7 +683,6 @@ export function Table<T>({
           box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
-        /* ✨ BADGE GENÉRICO */
         .table-badge {
           display: inline-block;
           padding: 0.25rem 0.75rem;
@@ -411,7 +731,17 @@ export function Table<T>({
           border: 1px solid rgba(239, 68, 68, 0.4);
         }
 
-        /* ✨ STATUS INDICATOR */
+        .badge-info {
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.3));
+          color: rgb(37, 99, 235);
+          border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+
+        .dark .badge-info {
+          color: rgb(147, 197, 253);
+          border: 1px solid rgba(59, 130, 246, 0.5);
+        }
+
         .status-indicator {
           width: 8px;
           height: 8px;
@@ -434,7 +764,6 @@ export function Table<T>({
           50% { opacity: 0.7; transform: scale(0.9); }
         }
 
-        /* ✨ ESTADO VACÍO */
         .empty-state {
           padding: 3rem 2rem;
           text-align: center;
@@ -457,7 +786,6 @@ export function Table<T>({
           50% { transform: translateY(-10px); }
         }
 
-        /* ✨ LOADING STATE */
         .loading-row {
           padding: 2rem;
           text-align: center;
@@ -482,7 +810,6 @@ export function Table<T>({
           to { transform: rotate(360deg); }
         }
 
-        /* ✨ SCROLL PERSONALIZADO */
         .table-container::-webkit-scrollbar {
           height: 8px;
         }
@@ -501,7 +828,6 @@ export function Table<T>({
           background: linear-gradient(90deg, rgba(212, 175, 55, 0.5), rgba(59, 130, 246, 0.5));
         }
 
-        /* ✨ RESPONSIVE */
         @media (max-width: 768px) {
           .futuristic-table thead th,
           .futuristic-table tbody td {
@@ -517,8 +843,28 @@ export function Table<T>({
           .action-btn {
             padding: 0.375rem;
           }
+
+          .pagination-container {
+            flex-direction: column;
+            gap: 1rem;
+          }
         }
       `}</style>
+
+      {/* ✨ BÚSQUEDA GLOBAL */}
+      {enableGlobalSearch && (
+        <div className="global-search">
+          <input
+            type="text"
+            placeholder={globalSearchPlaceholder}
+            value={globalSearch}
+            onChange={(e) => {
+              setGlobalSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+      )}
 
       {/* ✨ TABLA DESKTOP */}
       <div
@@ -527,16 +873,91 @@ export function Table<T>({
         <table className="futuristic-table w-full">
           <thead>
             <tr>
-              {columns.map((column) => (
+              {orderedColumns.map((column) => (
                 <th
                   key={column.key}
                   style={{
                     width: column.width,
                     textAlign: column.align || "left",
+                    cursor: "move",
                   }}
-                  className={column.className}
+                  className={`${column.className} ${draggedColumn === column.key ? 'opacity-50' : ''}`}
+                  draggable={true}
+                  onDragStart={() => handleDragStart(column.key)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(column.key)}
+                  onDragEnd={handleDragEnd}
                 >
-                  {column.header}
+                  <div
+                    className={column.sortable ? "sortable-header" : ""}
+                    onClick={() => column.sortable && handleSort(column.key)}
+                  >
+                    <span>{column.header}</span>
+                    {column.sortable && (
+                      <span
+                        className={`sort-icon ${
+                          sortConfig?.key === column.key ? "active" : ""
+                        }`}
+                      >
+                        {sortConfig?.key === column.key ? (
+                          sortConfig.direction === "asc" ? (
+                            "▲"
+                          ) : (
+                            "▼"
+                          )
+                        ) : (
+                          "⇅"
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  {column.filterable && (
+  <div className="column-filter">
+
+    {/* === SELECT FILTER === */}
+    {column.filterType === "select" && column.filterOptions ? (
+      <select
+        value={columnFilters[column.key] || ""}
+        onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <option value="">Todos</option>
+        {column.filterOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    ) : null}
+
+    {/* === BOOLEAN FILTER === */}
+    {column.filterType === "boolean" && (
+      <select
+        value={columnFilters[column.key] ?? ""}
+        onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <option value="">Todos</option>
+        <option value="true">Activo</option>
+        <option value="false">Inactivo</option>
+      </select>
+    )}
+
+    {/* === DEFAULT INPUT FILTER (text/number/date etc.) === */}
+    {column.filterType !== "select" &&
+     column.filterType !== "boolean" && (
+      <input
+        type={column.filterType || "text"}
+        placeholder={`Filtrar ${column.header.toLowerCase()}...`}
+        value={columnFilters[column.key] || ""}
+        onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+      />
+    )}
+
+  </div>
+)}
+
                 </th>
               ))}
             </tr>
@@ -544,21 +965,21 @@ export function Table<T>({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length}>
+                <td colSpan={orderedColumns.length}>
                   <div className="loading-row">
                     <div className="loading-spinner"></div>
                     <p className="mt-2 text-sm">Cargando datos...</p>
                   </div>
                 </td>
               </tr>
-            ) : data.length > 0 ? (
-              data.map((row, index) => (
+            ) : paginatedData.length > 0 ? (
+              paginatedData.map((row, index) => (
                 <tr
                   key={keyExtractor(row)}
                   onClick={() => onRowClick?.(row)}
                   className={onRowClick ? "clickable" : ""}
                 >
-                  {columns.map((column) => (
+                  {orderedColumns.map((column) => (
                     <td
                       key={column.key}
                       style={{ textAlign: column.align || "left" }}
@@ -566,14 +987,14 @@ export function Table<T>({
                     >
                       {column.render
                         ? column.render(row, index)
-                        : (row as any)[column.key]}
+                        : getColumnValue(row, column)}
                     </td>
                   ))}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length}>
+                <td colSpan={orderedColumns.length}>
                   <div className="empty-state">
                     <div className="empty-state-icon">📋</div>
                     <p className="text-sm font-medium">{emptyMessage}</p>
@@ -584,6 +1005,87 @@ export function Table<T>({
             )}
           </tbody>
         </table>
+
+        {/* ✨ PAGINACIÓN */}
+        {enablePagination && processedData.length > 0 && (
+          <div className="pagination-container">
+            <div className="pagination-info">
+              Mostrando {(currentPage - 1) * pageSize + 1} -{" "}
+              {Math.min(currentPage * pageSize, processedData.length)} de{" "}
+              {processedData.length} registros
+            </div>
+
+            <div className="pagination-controls">
+              <select
+                className="page-size-selector"
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              >
+                {pageSizeOptions.map((size) => (
+                  <option key={size} value={size}>
+                    {size} por página
+                  </option>
+                ))}
+              </select>
+
+              <button
+                className="pagination-btn"
+                onClick={() => goToPage(1)}
+                disabled={currentPage === 1}
+              >
+                ««
+              </button>
+              <button
+                className="pagination-btn"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                «
+              </button>
+
+              {/* Números de página */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    className={`pagination-btn ${
+                      currentPage === pageNum ? "active" : ""
+                    }`}
+                    onClick={() => goToPage(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                className="pagination-btn"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                »
+              </button>
+              <button
+                className="pagination-btn"
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                »»
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ✨ VISTA MÓVIL (TARJETAS) */}
@@ -595,23 +1097,49 @@ export function Table<T>({
               Cargando...
             </p>
           </div>
-        ) : data.length > 0 ? (
-          data.map((row, index) => (
-            <div
-              key={keyExtractor(row)}
-              className="mobile-card"
-              onClick={() => onRowClick?.(row)}
-            >
-              <div className="relative z-10">
-                {mobileCardRender ? (
-                  mobileCardRender(row, index)
-                ) : (
-                  // ✅ Renderizado por defecto si no se proporciona mobileCardRender
-                  <DefaultMobileCard row={row} columns={columns} />
-                )}
+        ) : paginatedData.length > 0 ? (
+          <>
+            {paginatedData.map((row, index) => (
+              <div
+                key={keyExtractor(row)}
+                className="mobile-card"
+                onClick={() => onRowClick?.(row)}
+              >
+                <div className="relative z-10">
+                  {mobileCardRender ? (
+                    mobileCardRender(row, index)
+                  ) : (
+                    <DefaultMobileCard row={row} columns={columns} />
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+
+            {/* Paginación móvil */}
+            {enablePagination && (
+              <div className="pagination-container">
+                <div className="pagination-info">
+                  Página {currentPage} de {totalPages}
+                </div>
+                <div className="pagination-controls">
+                  <button
+                    className="pagination-btn"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    className="pagination-btn"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="empty-state">
             <div className="empty-state-icon">📋</div>
@@ -800,7 +1328,7 @@ export const StatusBadge: React.FC<{
 
 export const Badge: React.FC<{
   text: string | number;
-  variant?: "primary" | "success" | "warning" | "danger";
+  variant?: "primary" | "success" | "warning" | "danger" | "info";
 }> = ({ text, variant = "primary" }) => (
   <span className={`table-badge badge-${variant}`}>{text}</span>
 );

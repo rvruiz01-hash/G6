@@ -11,7 +11,7 @@ import PartesCorporales from "./pages/Catalogos/BodyParts/BodyPart";
 import Colores from "./pages/Catalogos/Color/Color";
 import Tallas from "./pages/Catalogos/Size/Size";
 import TiposUniformes from "./pages/Catalogos/TypeUniform/TypesUniforms";
-import Bancos from "./pages/Catalogos/Bank";
+import Bancos from "./pages/Catalogos/Bank/Bank";
 import Proveedor from "./pages/Supplier";
 import Sucursales from "./pages/Catalogos/branch";
 import Factura from "./pages/Invoice";
