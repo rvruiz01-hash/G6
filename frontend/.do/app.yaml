@@ -1,0 +1,19 @@
+name: g6-frontend
+
+spec:
+  name: g6-frontend
+  region: nyc
+  
+  static_sites:
+    - name: web
+      # Comandos para construir React
+      build_command: npm run build
+      
+      # Directorio de salida de React
+      output_dir: /build
+      
+      # Variables de entorno para React
+      envs:
+        - key: REACT_APP_API_URL
+          scope: BUILD_TIME
+          value: "${API_URL}"
