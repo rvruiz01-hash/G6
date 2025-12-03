@@ -7,6 +7,7 @@ import { useToast } from "../components/Toast";
 import { Table, Badge } from "../components/Table1";
 import InvoiceDetailModal from "../components/InvoiceDetailModal";
 import { FileText, Upload, Eye } from "lucide-react";
+import { API_URL } from "../config/api_url";  // ← AGREGAR ESTA LÍNEA
 
 // ============================================
 // INTERFACES
@@ -378,12 +379,10 @@ export default function Facturas() {
 
   // Función para ver archivo
   const handleViewFile = (filename: string) => {
-    if (!filename) return;
-    const url = `${
-      import.meta.env.VITE_API_URL || "http://localhost:8000"
-    }/api/invoice-file/${filename.split("/").pop()}`;
-    window.open(url, "_blank");
-  };
+  if (!filename) return;
+  const url = `${API_URL}/api/invoice-file/${filename.split("/").pop()}`;
+  window.open(url, "_blank");
+};
 
   const fetchSuppliers = async () => {
     try {
