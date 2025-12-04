@@ -68,17 +68,16 @@ protected function attachTokenAndContinue(Request $request, Closure $next, strin
     $ttlSeconds = $ttlMinutes * 60;
     $expiresAt = now()->addSeconds($ttlSeconds)->timestamp;
 
-    // 🔧 VALORES HARDCODEADOS
     $cookie = cookie(
         'access_token',
         $newToken,
         $ttlMinutes,
         '/',
-        '.ondigitalocean.app',   // domain
-        true,                    // secure
-        true,                    // httpOnly
+        'g6-backend-znfeu.ondigitalocean.app',  // ← SIN PUNTO
+        true,
+        true,
         false,
-        'None'                   // sameSite
+        'None'
     );
 
     $response = $next($request);

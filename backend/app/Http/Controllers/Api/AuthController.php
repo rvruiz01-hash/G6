@@ -35,17 +35,16 @@ class AuthController extends Controller
 public function logout()
 {
     try {
-        // 🔧 VALORES HARDCODEADOS
         $cookie = cookie(
             'access_token',
             null,
-            -1,                      // expire inmediatamente
+            -1,
             '/',
-            '.ondigitalocean.app',   // domain
-            true,                    // secure
-            true,                    // httpOnly
+            'g6-backend-znfeu.ondigitalocean.app',  // ← SIN PUNTO
+            true,
+            true,
             false,
-            'None'                   // sameSite
+            'None'
         );
         
         return response()->json(['message' => 'Sesión cerrada'])
@@ -54,7 +53,6 @@ public function logout()
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
-
     // app/Http/Controllers/Api/AuthController.php
 
 // ... (tus demás funciones)
@@ -100,24 +98,22 @@ public function refresh()
         return response()->json($result);
     }
 
-
 protected function respondWithToken(string $token, $user = null)
 {
     $ttlMinutes = (int) config('jwt.ttl', 30);
     $ttlSeconds = $ttlMinutes * 60;
     $expiresAt = now()->addSeconds($ttlSeconds)->timestamp;
 
-    // 🔧 VALORES HARDCODEADOS PARA PRODUCCIÓN
     $cookie = cookie(
-        'access_token',              // name
-        $token,                      // value
-        $ttlMinutes,                 // minutes
-        '/',                         // path
-        '.ondigitalocean.app',       // domain (CON PUNTO)
-        true,                        // secure (HTTPS)
-        true,                        // httpOnly
-        false,                       // raw
-        'None'                       // sameSite
+        'access_token',
+        $token,
+        $ttlMinutes,
+        '/',
+        'g6-backend-znfeu.ondigitalocean.app',  // ← SIN PUNTO INICIAL
+        true,
+        true,
+        false,
+        'None'
     );
 
     return response()->json([
