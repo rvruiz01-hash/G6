@@ -62,27 +62,27 @@ class RefreshJwtIfNeeded
         return $next($request);
     }
 
-    protected function attachTokenAndContinue(Request $request, Closure $next, string $newToken)
-    {
-        $ttlMinutes = (int) config('jwt.ttl', 30);
-        $ttlSeconds = $ttlMinutes * 60;
-        $expiresAt = now()->addSeconds($ttlSeconds)->timestamp;
-        $secure = config('app.env') !== 'local';
+protected function attachTokenAndContinue(Request $request, Closure $next, string $newToken)
+{
+    $ttlMinutes = (int) config('jwt.ttl', 30);
+    $ttlSeconds = $ttlMinutes * 60;
+    $expiresAt = now()->addSeconds($ttlSeconds)->timestamp;
 
-        $cookie = cookie(
-            'access_token',
-            $newToken,
-            $ttlMinutes,
-            '/',
-            null,
-            $secure,
-            true,
-            false,
-            'Lax'
-        );
+    // ✅ Usar valores de config/cookie.php
+    $cookie = cookie(
+        'access_token',
+        $newToken,
+        $ttlMinutes,
+        '/',
+        config('cookie.domain'),      // ← CAMBIO AQUÍ
+        config('cookie.secure'),      // ← CAMBIO AQUÍ
+        true,
+        false,
+        config('cookie.same_site')    // ← CAMBIO AQUÍ
+    );
 
-        $response = $next($request);
-        return $response->withCookie($cookie)
-                        ->header('X-Token-Expires-At', $expiresAt);
-    }
+    $response = $next($request);
+    return $response->withCookie($cookie)
+                    ->header('X-Token-Expires-At', $expiresAt);
+}
 }

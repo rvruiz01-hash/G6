@@ -32,11 +32,22 @@ class AuthController extends Controller
         return $this->respondWithToken($token, $result);
     }
 
-    public function logout()
+public function logout()
 {
     try {
-        // Elimina la cookie
-        $cookie = cookie('access_token', null, -1); // expire
+        // ✅ Usar valores de config/cookie.php
+        $cookie = cookie(
+            'access_token',
+            null,
+            -1,
+            '/',
+            config('cookie.domain'),      // ← CAMBIO AQUÍ
+            config('cookie.secure'),      // ← CAMBIO AQUÍ
+            true,
+            false,
+            config('cookie.same_site')    // ← CAMBIO AQUÍ
+        );
+        
         return response()->json(['message' => 'Sesión cerrada'])
                          ->withCookie($cookie);
     } catch (\Exception $e) {
@@ -90,29 +101,26 @@ public function refresh()
     }
 
 
-    protected function respondWithToken(string $token, $user = null)
+protected function respondWithToken(string $token, $user = null)
 {
     $ttlMinutes = (int) config('jwt.ttl', 30);
     $ttlSeconds = $ttlMinutes * 60;
     $expiresAt = now()->addSeconds($ttlSeconds)->timestamp;
 
-    // AQUI ESTA LA PARTE IMPORTANTE:
-    // Asegúrate de que `SameSite` sea 'Lax' y `secure` sea true en producción
+    // ✅ Usar valores de config/cookie.php
     $cookie = cookie(
         'access_token',
         $token,
         $ttlMinutes,
-        null,
-        null,
-        false, // <-- AQUI DEBE SER TRUE SI USAS HTTPS
-        true, // <-- HttpOnly, ¡NO ACCESIBLE DESDE JAVASCRIPT!
+        '/',
+        config('cookie.domain'),      // ← CAMBIO AQUÍ
+        config('cookie.secure'),      // ← CAMBIO AQUÍ
+        true,                         // httpOnly: siempre true
         false,
-        'Lax' // <-- SameSite Lax
+        config('cookie.same_site')    // ← CAMBIO AQUÍ
     );
 
-    // Retornamos el token en la respuesta para tu interceptor
-     return response()->json([
-        //'access_token' => $token,
+    return response()->json([
         'token_type'   => 'bearer',
         'expires_in'   => $ttlSeconds,
         'expires_at'   => $expiresAt,
