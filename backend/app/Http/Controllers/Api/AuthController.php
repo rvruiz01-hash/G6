@@ -35,17 +35,17 @@ class AuthController extends Controller
 public function logout()
 {
     try {
-        // ✅ Usar valores de config/cookie.php
+        // 🔧 VALORES HARDCODEADOS
         $cookie = cookie(
             'access_token',
             null,
-            -1,
+            -1,                      // expire inmediatamente
             '/',
-            config('cookie.domain'),      // ← CAMBIO AQUÍ
-            config('cookie.secure'),      // ← CAMBIO AQUÍ
-            true,
+            '.ondigitalocean.app',   // domain
+            true,                    // secure
+            true,                    // httpOnly
             false,
-            config('cookie.same_site')    // ← CAMBIO AQUÍ
+            'None'                   // sameSite
         );
         
         return response()->json(['message' => 'Sesión cerrada'])
@@ -107,17 +107,17 @@ protected function respondWithToken(string $token, $user = null)
     $ttlSeconds = $ttlMinutes * 60;
     $expiresAt = now()->addSeconds($ttlSeconds)->timestamp;
 
-    // ✅ Usar valores de config/cookie.php
+    // 🔧 VALORES HARDCODEADOS PARA PRODUCCIÓN
     $cookie = cookie(
-        'access_token',
-        $token,
-        $ttlMinutes,
-        '/',
-        config('cookie.domain'),      // ← CAMBIO AQUÍ
-        config('cookie.secure'),      // ← CAMBIO AQUÍ
-        true,                         // httpOnly: siempre true
-        false,
-        config('cookie.same_site')    // ← CAMBIO AQUÍ
+        'access_token',              // name
+        $token,                      // value
+        $ttlMinutes,                 // minutes
+        '/',                         // path
+        '.ondigitalocean.app',       // domain (CON PUNTO)
+        true,                        // secure (HTTPS)
+        true,                        // httpOnly
+        false,                       // raw
+        'None'                       // sameSite
     );
 
     return response()->json([
