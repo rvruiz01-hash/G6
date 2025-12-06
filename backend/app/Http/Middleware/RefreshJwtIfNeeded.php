@@ -68,16 +68,21 @@ protected function attachTokenAndContinue(Request $request, Closure $next, strin
     $ttlSeconds = $ttlMinutes * 60;
     $expiresAt = now()->addSeconds($ttlSeconds)->timestamp;
 
+    // 👇 DETECTAR AUTOMÁTICAMENTE EL ENTORNO
+    $domain = env('APP_ENV') === 'production' 
+        ? 'g6-backend-znfeu.ondigitalocean.app'
+        : null;
+
     $cookie = cookie(
         'access_token',
         $newToken,
         $ttlMinutes,
         '/',
-        'g6-backend-znfeu.ondigitalocean.app',  // ← SIN PUNTO
-        true,
+        $domain,  // 👈 Dinámico
+        env('APP_ENV') === 'production',  // secure
         true,
         false,
-        'None'
+        env('APP_ENV') === 'production' ? 'None' : 'Lax'  // SameSite
     );
 
     $response = $next($request);
