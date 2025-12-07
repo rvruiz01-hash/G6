@@ -3,7 +3,7 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Link } from "react-router";
 import { useDropdown } from "../../context/DropdownContext";
-import bellIcon from "../../assets/images/notify/bell.svg";
+import bellIcon from "/images/notify/bell.svg";
 
 export default function NotificationDropdown() {
   const { openDropdown, setOpenDropdown } = useDropdown();

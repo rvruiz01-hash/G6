@@ -5,10 +5,10 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { AuthContext } from "../../context/AuthContext";
 import { getEmployeePhotoUrl } from "../../config/api_url";
 import { useDropdown } from "../../context/DropdownContext";
-import settingsUserIcon from "../../assets/images/userDropDown/settingsUser.svg";
-import passwordIcon from "../../assets/images/userDropDown/password.svg";
-import supportIcon from "../../assets/images/userDropDown/support.svg";
-import LogOutIcon from "../../assets/images/userDropDown/logOutIcon.svg";
+import settingsUserIcon from "/images/userDropDown/settingsUser.svg";
+import passwordIcon from "/images/userDropDown/password.svg";
+import supportIcon from "/images/userDropDown/support.svg";
+import LogOutIcon from "/images/userDropDown/logOutIcon.svg";
 export default function UserDropdown() {
   const { openDropdown, setOpenDropdown } = useDropdown();
   const isOpen = openDropdown === "user";

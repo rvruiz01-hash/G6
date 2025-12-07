@@ -1,6 +1,6 @@
 import { useTheme } from "../../context/ThemeContext";
-import sunIcon from "../../assets/images/theme/sun.svg";
-import moonIcon from "../../assets/images/theme/moon.svg";
+import sunIcon from "/images/theme/sun.svg";
+import moonIcon from "/images/theme/moon.svg";
 
 export const ThemeToggleButton: React.FC = () => {
   const { toggleTheme } = useTheme();

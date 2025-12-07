@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
 import { useModules } from "../context/ModuleContext";
-import logoIcon from "../assets/images/logo/g6_sin_fondo.ico";
+import logoIcon from "/images/logo/g6_sin_fondo.ico";
 
 type ModuleType = {
   id: number;
@@ -132,7 +132,7 @@ const AppSidebar: React.FC = () => {
                   >
                     <span className="menu-item-icon-size">
                       <img
-                        src={`/src/assets/images/modules/${module.icon_svg}`}
+                        src={`/images/modules/${module.icon_svg}`}
                         className="w-6 h-6 group-hover:opacity-80"
                       />
                     </span>
@@ -170,7 +170,7 @@ const AppSidebar: React.FC = () => {
                           >
                             <span className="menu-item-icon-size">
                               <img
-                                src={`/src/assets/images/modules/${sub.icon_svg}`}
+                                src={`/images/modules/${sub.icon_svg}`}
                                 className="w-4 h-4 group-hover:opacity-80"
                               />
                             </span>
@@ -195,7 +195,7 @@ const AppSidebar: React.FC = () => {
                 >
                   <span className="menu-item-icon-size">
                     <img
-                      src={`/src/assets/images/modules/${module.icon_svg}`}
+                      src={`/images/modules/${module.icon_svg}`}
                       className="w-6 h-6 group-hover:opacity-80"
                     />
                   </span>

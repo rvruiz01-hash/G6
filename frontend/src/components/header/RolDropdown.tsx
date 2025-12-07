@@ -4,7 +4,7 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import api from "../../../services/api";
 import { useDropdown } from "../../context/DropdownContext";
 import { useModules } from "../../context/ModuleContext"; // 👈 Nuevo contexto para módulos
-import userRoleIcon from "../../assets/images/rolDropDown/UserRole.svg";
+import userRoleIcon from "/images/rolDropDown/UserRole.svg";
 
 interface Module {
   id: number;
@@ -107,7 +107,7 @@ export default function RolDropdown() {
                   className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
                 >
                   <img
-                    src={`/src/assets/images/rolDropDown/${role.icono_svg}`}
+                    src={`/images/rolDropDown/${role.icono_svg}`}
                     alt={role.name}
                     className="w-6 h-6 group-hover:opacity-80"
                   />
