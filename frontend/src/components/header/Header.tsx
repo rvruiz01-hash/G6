@@ -79,13 +79,17 @@ const Header: React.FC<HeaderProps> = ({ onClick, onToggle }) => {
           </button>
 
           <Link to="/" className="lg:hidden">
-            <img className="dark:hidden" src="g6_sin_fondo.png" alt="Logo" />
-            <img
-              className="hidden dark:block"
-              // src="g6_sin_fondo.png"
-              alt="Logo"
-            />
-          </Link>
+  <img 
+    className="dark:hidden" 
+    src="/g6_sin_fondo.png"  {/* 👈 Agrega / */}
+    alt="Logo" 
+  />
+  <img
+    className="hidden dark:block"
+    src="/g6_sin_fondo.png"  {/* 👈 Agrega / */}
+    alt="Logo"
+  />
+</Link>
 
           <button
             onClick={toggleApplicationMenu}
