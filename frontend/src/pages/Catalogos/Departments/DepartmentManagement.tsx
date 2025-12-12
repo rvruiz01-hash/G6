@@ -8,10 +8,11 @@ import Button from "../../../components/ui/button/Button";
 import { Table, Badge, ActionButtons } from "../../../components/Table1";
 
 // 🎯 Importar Driver.js
-import { driver } from "driver.js";
+// import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import "../../../styles/driver-custom.css"; // Tu CSS personalizado
 import { getDepartmentDriverSteps } from "./departmentDriverSteps";
+import FeedbackButton from "../../../components/FeedbackButton";
 
 interface Department {
   id: number;
@@ -137,6 +138,7 @@ export default function DepartmentManagement() {
       header: "ID",
       width: "100px",
       align: "center" as const,
+      sortable: true,
       render: (row: Department) => (
         <Badge text={`#${row.id}`} variant="primary" />
       ),
@@ -145,6 +147,7 @@ export default function DepartmentManagement() {
       key: "name",
       header: "Nombre del Departamento",
       align: "center" as const,
+      sortable: true,
       render: (row: Department) => (
         <span className="font-medium text-gray-900 dark:text-gray-100">
           {row.name}
@@ -164,6 +167,10 @@ export default function DepartmentManagement() {
 
   return (
     <>
+      <FeedbackButton
+        moduleName="Gestión de Departamentos"
+        moduleUrl="/catalogos/departamentos"
+      />
       <div data-tour="bodyForm">
         {/* Header con botón de tutorial */}
         <div className="flex justify-between items-center mb-4 sm:mb-6">

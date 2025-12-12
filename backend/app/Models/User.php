@@ -33,8 +33,6 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-
-
     /**
      * The attributes that are mass assignable.
      *
@@ -104,6 +102,12 @@ class User extends Authenticatable implements JWTSubject
         ->withTimestamps();
     }
 
+    public function isAdmin(): bool
+    {
+        // Verifica si tiene el rol con ID 1 (Administrador)
+        return $this->roles()->where('role_id', 1)->exists();
+    }
+
     /**
      * Obtener el rol principal del usuario
      */
@@ -113,6 +117,15 @@ class User extends Authenticatable implements JWTSubject
                     ->withPivot('is_primary')
                     ->wherePivot('is_primary', true)
                     ->first();
+    }
+
+    /**
+     * 🎯 ACCESSOR PARA COMPATIBILIDAD CON FRONTEND
+     * Permite usar $user->is_admin en el código
+     */
+    public function getIsAdminAttribute(): bool
+    {
+        return $this->isAdmin();
     }
 
     /**
@@ -149,7 +162,6 @@ class User extends Authenticatable implements JWTSubject
             }
             return $this;
         }
-
         // Si es principal, quitar el flag de los demás
         if ($isPrimary) {
             $this->roles()->updateExistingPivot(
@@ -157,7 +169,6 @@ class User extends Authenticatable implements JWTSubject
                 ['is_primary' => false]
             );
         }
-
         // Asignar el nuevo rol
         $this->roles()->attach($roleId, ['is_primary' => $isPrimary]);
 
@@ -169,6 +180,11 @@ class User extends Authenticatable implements JWTSubject
      */
     public function hasRole($roleName)
     {
+
+        if (is_numeric($roleName)) {
+            return $this->roles()->where('role_id', $roleName)->exists();
+        }
+
         return $this->roles()->where('name', $roleName)->exists();
     }
 

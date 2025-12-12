@@ -21,6 +21,8 @@ import Departments from "./pages/Catalogos/Departments/Departments";
 import Positions from "./pages/Catalogos/Positions/Positions";
 import DepartmentsAndPositions from "./pages/Catalogos/OrganizationalStructure/DepartmentsAndPositions";
 import UniformParameters from "./pages/Catalogos/UniformParameters/UniformParameters";
+import FeedbackManagement from "./pages/Admin/FeedbackManagement";
+import MyFeedback from "./pages/User/MyFeedback";
 
 export default function AppRoutes() {
   const { modules } = useModules();
@@ -48,10 +50,9 @@ export default function AppRoutes() {
       />
       <Route path="/catalogos/departamentos" element={<Departments />} />
       <Route path="/catalogos/posiciones" element={<Positions />} />
-      <Route
-        path="/Parametros_Uniformes"
-        element={<UniformParameters />}
-      />
+      <Route path="/Parametros_Uniformes" element={<UniformParameters />} />
+      <Route path="/admin/feedback" element={<FeedbackManagement />} />
+      <Route path="/mis-reportes" element={<MyFeedback />} />
       {/* Rutas dinámicas desde la API */}
       {modules.flatMap((module) => {
         const routes = [];
