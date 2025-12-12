@@ -31,6 +31,9 @@ use App\Http\Controllers\Api\StaffingPlanController;
 use App\Http\Controllers\Api\OrganizationChartController;   
 use App\Http\Controllers\Api\DepartmentController;
 
+use App\Http\Controllers\Api\FeedbackController;
+
+
 
 // Rutas públicas
 Route::post('auth/login', [AuthController::class, 'login']);
@@ -190,7 +193,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('departments', DepartmentController::class);
         // Rutas adicionales
     Route::get('/{id}/positions', [DepartmentController::class, 'positions']);
-    Route::get('/{id}/statistics', [DepartmentController::class, 'statistics']);
+    // Route::get('/{id}/statistics', [DepartmentController::class, 'statistics']);
 
     // Regions
     // Route::apiResource('regions', [RegionController::class, 'index']);
@@ -209,4 +212,32 @@ Route::middleware('auth:api')->group(function () {
 
     Route::apiResource('clients', ClientController::class);
     Route::apiResource('client-sites', ClientSiteController::class);
-    Route::apiResource('staffing-plans', StaffingPlanController::class);});
+    Route::apiResource('staffing-plans', StaffingPlanController::class);
+
+    // Crear feedback
+    Route::post('/feedback', [FeedbackController::class, 'store']);
+
+    // Ver mis feedbacks (¡ya no requiere login!)
+    Route::get('/feedback/my', [FeedbackController::class, 'myFeedbacks']);
+
+    // RUTAS DE CHAT (públicas)
+    Route::get('/feedback/{id}/messages', [FeedbackController::class, 'getMessages']);
+    Route::post('/feedback/{id}/messages', [FeedbackController::class, 'sendMessage']);
+    Route::post('/feedback/{id}/messages/read', [FeedbackController::class, 'markMessagesAsRead']);
+    Route::post('/feedback/{id}/view', [FeedbackController::class, 'registerView']);
+
+    // Rutas para administradores (también sin auth)
+    Route::get('/feedback', [FeedbackController::class, 'index']);
+    Route::get('/feedback/statistics', [FeedbackController::class, 'statistics']);
+    Route::get('/feedback/{id}', [FeedbackController::class, 'show']);
+    Route::put('/feedback/{id}', [FeedbackController::class, 'update']);
+    Route::delete('/feedback/{id}', [FeedbackController::class, 'destroy']);
+
+    // Gestión
+    Route::post('/feedback/{id}/assign', [FeedbackController::class, 'assign']);
+
+    Route::get('/notifications', [FeedbackController::class, 'getNotifications']);
+    Route::get('/notifications/unread-count', [FeedbackController::class, 'getUnreadCount']);
+    Route::post('/notifications/{id}/read', [FeedbackController::class, 'markNotificationAsRead']);
+    Route::post('/notifications/read-all', [FeedbackController::class, 'markAllNotificationsAsRead']);
+});

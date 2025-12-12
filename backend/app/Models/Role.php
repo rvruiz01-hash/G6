@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -37,5 +36,13 @@ class Role extends Model
     {
         return $this->belongsToMany(Module::class, 'module_role', 'role_id', 'module_id')
                     ->withTimestamps();
+    }
+
+    /**
+     * Scope para roles activos
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', true);
     }
 }

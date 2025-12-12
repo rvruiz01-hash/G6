@@ -1,6 +1,6 @@
 // src/pages/Catalogos/Departments.tsx
 // 🎯 PÁGINA STANDALONE - Puede usarse de forma independiente
-import React from "react";
+// import React from "react";
 import DepartmentManagement from "./DepartmentManagement";
 
 export default function Departments() {
